@@ -1,0 +1,6 @@
+build/
+dist/
+node_modules/
+tmp-jam-pack-nodegui/
+data/
+.wwebjs_cache/

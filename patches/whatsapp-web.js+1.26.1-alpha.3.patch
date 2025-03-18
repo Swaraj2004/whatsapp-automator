@@ -1,0 +1,13 @@
+diff --git a/node_modules/whatsapp-web.js/index.d.ts b/node_modules/whatsapp-web.js/index.d.ts
+index bd75dbf..28e6c54 100644
+--- a/node_modules/whatsapp-web.js/index.d.ts
++++ b/node_modules/whatsapp-web.js/index.d.ts
+@@ -124,7 +124,7 @@ declare namespace WAWebJS {
+          * @param showNotification - Show notification to pair on phone number
+          * @returns {Promise<string>} - Returns a pairing code in format "ABCDEFGH"
+          */
+-        requestPairingCode(phoneNumber: string, showNotification = true): Promise<string>
++        requestPairingCode(phoneNumber: string, showNotification?: boolean): Promise<string>
+ 
+         /** Force reset of connection state for the client */
+         resetState(): Promise<void>

@@ -1,0 +1,36 @@
+{
+  "name": "whatsapp-automator",
+  "version": "1.0.0",
+  "description": "WhatsApp Automator",
+  "scripts": {
+    "build": "npm run build-code && npm run build-bundle",
+    "build-code": "tsc",
+    "build-bundle": "esbuild build/main.js --sourcemap --bundle --outfile=dist/main.cjs --platform=node --format=cjs --external:@nodegui/nodegui \"--external:nodegui-plugin-*\" --external:puppeteer --external:fluent-ffmpeg",
+    "clean": "rimraf build dist tmp-jam-pack-nodegui",
+    "package": "jam-pack-nodegui --config packaging/jam-pack-nodegui.json",
+    "start": "qode dist/main.cjs",
+    "postinstall": "patch-package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Swaraj2004/whatsapp-automator.git"
+  },
+  "author": "Swaraj Chavan",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.3.1",
+    "esbuild": "^0.18.4",
+    "jam-pack-nodegui": "^0.18.0",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0",
+    "rimraf": "^5.0.1",
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "@nodegui/nodegui": "^0.61.0",
+    "qrcode-terminal": "^0.12.0",
+    "source-map-support": "^0.5.21",
+    "whatsapp-web.js": "^1.26.1-alpha.3",
+    "xlsx": "^0.18.5"
+  }
+}
