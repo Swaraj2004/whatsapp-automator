@@ -17,7 +17,7 @@ const mainWindow = new QMainWindow();
 mainWindow.setWindowTitle("WhatsApp Bulk Messenger");
 
 // Set minimum window size
-mainWindow.setMinimumSize(800, 600);
+mainWindow.setMinimumSize(1280, 720);
 
 // Set up main widget and layout
 const centralWidget = new QWidget();

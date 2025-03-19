@@ -1,4 +1,5 @@
 import {
+  CursorShape,
   FlexLayout,
   QFileDialog,
   QLabel,
@@ -48,6 +49,7 @@ export function createMessageContactsTab(): QWidget {
   const contactsFileButton = new QPushButton();
   contactsFileButton.setText("Select Contacts File");
   contactsFileButton.setObjectName("contactsFileButton");
+  contactsFileButton.setCursor(CursorShape.PointingHandCursor);
   let contactsFilePath = "";
 
   contactsFileButton.addEventListener("clicked", () => {
@@ -66,10 +68,12 @@ export function createMessageContactsTab(): QWidget {
   const sendMessagesButton = new QPushButton();
   sendMessagesButton.setText("Start Sending Messages");
   sendMessagesButton.setObjectName("sendMessagesButton");
+  sendMessagesButton.setCursor(CursorShape.PointingHandCursor);
 
   const stopSendingButton = new QPushButton();
   stopSendingButton.setText("Stop Sending");
   stopSendingButton.setObjectName("stopSendingButton");
+  stopSendingButton.setCursor(CursorShape.PointingHandCursor);
 
   topLayout.addWidget(contactsFileButton);
   topLayout.addWidget(sendMessagesButton);
@@ -102,10 +106,12 @@ export function createMessageContactsTab(): QWidget {
   const addFileButton = new QPushButton();
   addFileButton.setText("Add File");
   addFileButton.setObjectName("addFileButton");
+  addFileButton.setCursor(CursorShape.PointingHandCursor);
 
   const clearFilesButton = new QPushButton();
   clearFilesButton.setText("Clear Files");
   clearFilesButton.setObjectName("clearFilesButton");
+  clearFilesButton.setCursor(CursorShape.PointingHandCursor);
 
   const filesList = new QListWidget();
   filesList.setObjectName("filesList");

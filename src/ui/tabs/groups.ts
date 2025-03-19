@@ -50,8 +50,8 @@ export function createGroupsTab(): QWidget {
     if (selectedFiles.length > 0) {
       const filePath = selectedFiles[0];
       groupsFilePath = filePath;
+      loadGroups(groupsFilePath);
     }
-    loadGroups(groupsFilePath);
   });
 
   const extractButton = new QPushButton();
@@ -132,6 +132,7 @@ export function createGroupsTab(): QWidget {
       color: #333;
       font-size: 14px;
       font-weight: bold;
+      min-width: 300px;
     }
   `);
 

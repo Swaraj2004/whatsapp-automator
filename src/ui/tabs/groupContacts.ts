@@ -1,16 +1,23 @@
 import {
+  CursorShape,
   FlexLayout,
+  QFileDialog,
+  QFont,
+  QLabel,
+  QLineEdit,
   QPushButton,
   QTableWidget,
   QTableWidgetItem,
   QWidget,
-  QLabel,
-  QLineEdit,
-  QFont,
-  CursorShape,
 } from "@nodegui/nodegui";
-import { loadGroupContactsFromExcel } from "../../backend/utils";
-import { extractGroupContacts } from "../../backend/controllers";
+import {
+  extractGroupContacts,
+  extractMultipleGroupContacts,
+} from "../../backend/controllers";
+import {
+  loadGroupContactsFromExcel,
+  loadGroupsFromExcel,
+} from "../../backend/utils";
 
 export function createGroupContactsTab(): QWidget {
   // Main container
@@ -44,11 +51,11 @@ export function createGroupContactsTab(): QWidget {
   groupIdInput.setPlaceholderText("Enter Group ID...");
 
   // Extract button
-  const extractButton = new QPushButton();
-  extractButton.setText("Extract Contacts");
-  extractButton.setObjectName("extractButton");
-  extractButton.setCursor(CursorShape.PointingHandCursor);
-  extractButton.addEventListener("clicked", async () => {
+  const extractByIdButton = new QPushButton();
+  extractByIdButton.setText("Extract Contacts By ID");
+  extractByIdButton.setObjectName("extractByIdButton");
+  extractByIdButton.setCursor(CursorShape.PointingHandCursor);
+  extractByIdButton.addEventListener("clicked", async () => {
     const groupId = groupIdInput.text().trim();
     if (!groupId) {
       statusLabel.setText("Please enter a valid Group ID!");
@@ -63,16 +70,52 @@ export function createGroupContactsTab(): QWidget {
     loadGroupContacts();
   });
 
+  const extractByExcelButton = new QPushButton();
+  extractByExcelButton.setText("Extract Contacts By Excel");
+  extractByExcelButton.setObjectName("extractByExcelButton");
+  extractByExcelButton.setCursor(CursorShape.PointingHandCursor);
+
+  let groupsFilePath = "";
+  extractByExcelButton.addEventListener("clicked", async () => {
+    const fileDialog = new QFileDialog();
+    fileDialog.setNameFilter("Excel Files (*.xlsx)");
+    fileDialog.exec();
+
+    const selectedFiles = fileDialog.selectedFiles();
+    if (selectedFiles.length > 0) {
+      const filePath = selectedFiles[0];
+      groupsFilePath = filePath;
+      const groups = loadGroupsFromExcel(groupsFilePath);
+      if (groups.length === 0) {
+        statusLabel.setText("No groups found!");
+        return;
+      }
+
+      statusLabel.setText("Extracting contacts...");
+      const res = await extractMultipleGroupContacts(groups);
+      if (typeof res === "string") {
+        statusLabel.setText(res);
+      }
+      loadGroupContacts();
+    }
+  });
+
   buttonLayout.addWidget(groupIdInput);
-  buttonLayout.addWidget(extractButton);
+  buttonLayout.addWidget(extractByIdButton);
+  buttonLayout.addWidget(extractByExcelButton);
   buttonLayout.addWidget(statusLabel);
 
   // Table to display group contacts
-  const groupContactsTable = new QTableWidget(0, 2);
+  const groupContactsTable = new QTableWidget(0, 3);
   groupContactsTable.setObjectName("groupContactsTable");
-  groupContactsTable.setHorizontalHeaderLabels(["User ID", "Number"]);
+  groupContactsTable.setHorizontalHeaderLabels([
+    "Group ID",
+    "User ID",
+    "Number",
+  ]);
   groupContactsTable.setColumnWidth(0, 250);
   groupContactsTable.setColumnWidth(1, 250);
+  groupContactsTable.setColumnWidth(2, 250);
   groupContactsTable.setMinimumSize(800, 550);
 
   // Add widgets to layout
@@ -101,6 +144,7 @@ export function createGroupContactsTab(): QWidget {
       border: 1px solid #ccc;
       border-radius: 4px;
       width: 300px;
+      margin-right: 10px;
     }
     QPushButton {
       padding: 8px 15px;
@@ -108,7 +152,8 @@ export function createGroupContactsTab(): QWidget {
       color: white;
       border-radius: 4px;
       font-weight: bold;
-      margin-left: 10px;
+      margin-right: 10px;
+      min-width: 160px;
     }
     QPushButton:hover {
       background-color: #1A66BD;
@@ -122,6 +167,7 @@ export function createGroupContactsTab(): QWidget {
       color: #333;
       font-size: 14px;
       font-weight: bold;
+      min-width: 300px;
     }
   `);
 
@@ -129,7 +175,7 @@ export function createGroupContactsTab(): QWidget {
   async function loadGroupContacts() {
     try {
       statusLabel.setText("Loading contacts...");
-      const contacts = await loadGroupContactsFromExcel();
+      const contacts = loadGroupContactsFromExcel();
 
       groupContactsTable.setRowCount(0);
 
@@ -139,12 +185,17 @@ export function createGroupContactsTab(): QWidget {
           groupContactsTable.setItem(
             index,
             0,
-            new QTableWidgetItem(contact.user_id || "")
+            new QTableWidgetItem(contact.group_id || "N/A")
           );
           groupContactsTable.setItem(
             index,
             1,
-            new QTableWidgetItem(contact.number || "")
+            new QTableWidgetItem(contact.user_id || "N/A")
+          );
+          groupContactsTable.setItem(
+            index,
+            2,
+            new QTableWidgetItem(contact.number || "N/A")
           );
         });
         statusLabel.setText(`Loaded ${contacts.length} contacts.`);

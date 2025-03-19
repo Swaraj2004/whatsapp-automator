@@ -55,8 +55,8 @@ export function createContactsTab(): QWidget {
     if (selectedFiles.length > 0) {
       const filePath = selectedFiles[0];
       contactsFilePath = filePath;
+      loadContacts(contactsFilePath);
     }
-    loadContacts(contactsFilePath);
   });
 
   // Extract button
@@ -140,6 +140,7 @@ export function createContactsTab(): QWidget {
       color: #333;
       font-size: 14px;
       font-weight: bold;
+      min-width: 300px;
     }
   `);
 

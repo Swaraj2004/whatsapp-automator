@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
 
 type Contact = {
+  group_id?: string;
   user_id: string;
   name?: string;
   number: string;
@@ -97,13 +98,27 @@ export function saveGroupContactsToExcel(contacts: Contact[]): void {
   XLSX.writeFile(wb, GROUP_CONTACTS_FILE);
 }
 
-export function loadGroupContactsFromExcel(): Contact[] {
-  if (!fs.existsSync(GROUP_CONTACTS_FILE)) {
-    console.log("❌ No group contacts file found!");
+export function loadGroupContactsFromExcel(
+  filePath?: string,
+  logger = console.log
+): Contact[] {
+  const targetFile = filePath || GROUP_CONTACTS_FILE;
+
+  if (!targetFile || !fs.existsSync(targetFile)) {
+    logger("❌ No group contacts file found!");
     return [];
   }
 
-  const workbook = XLSX.readFile(GROUP_CONTACTS_FILE);
-  const sheet = workbook.Sheets["Contacts"];
-  return XLSX.utils.sheet_to_json<Contact>(sheet);
+  try {
+    const workbook = XLSX.readFile(targetFile);
+    const sheet = workbook.Sheets["Contacts"];
+    if (!sheet) {
+      logger("❌ 'Contacts' sheet not found in the file!");
+      return [];
+    }
+    return XLSX.utils.sheet_to_json<Contact>(sheet);
+  } catch (error) {
+    logger(`❌ Error reading group contacts file: ${error.message}`);
+    return [];
+  }
 }

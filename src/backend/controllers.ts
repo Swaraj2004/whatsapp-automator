@@ -8,8 +8,9 @@ import {
 } from "./utils";
 
 type Contact = {
+  group_id?: string;
   user_id: string;
-  name: string;
+  name?: string;
   number: string;
 };
 
@@ -86,6 +87,7 @@ export async function extractGroupContacts(
 
     // Extract participants
     const participants = chat.groupMetadata.participants.map((participant) => ({
+      group_id: groupId,
       user_id: participant.id._serialized,
       number: participant.id.user,
     }));
@@ -102,4 +104,38 @@ export async function extractGroupContacts(
     console.error("Error extracting group contacts:", error);
     return `Error: ${error.message || "Unknown error"}`;
   }
+}
+
+export async function extractMultipleGroupContacts(
+  groups: { group_id: string; name: string }[]
+) {
+  let allContacts = [];
+
+  for (const group of groups) {
+    if (!group.group_id) continue;
+
+    const chat = await client.getChatById(group.group_id).catch(() => null);
+    if (!chat.isGroup) continue;
+
+    console.log(
+      `📥 Fetching contacts from ${group.name} (${group.group_id})...`
+    );
+
+    const participants = chat.participants.map((p) => ({
+      group_id: group.group_id,
+      user_id: p.id._serialized,
+      number: p.id.user,
+    }));
+
+    await delayRandom(console.log, 10000, 20000);
+
+    allContacts.push(...participants);
+  }
+
+  if (allContacts.length === 0) {
+    return "❌ No contacts found in the groups.";
+  }
+
+  saveGroupContactsToExcel(allContacts);
+  return `✅ Contacts saved to ${GROUP_CONTACTS_FILE}`;
 }
