@@ -150,9 +150,11 @@ export function createContactsTab(): QWidget {
       statusLabel.setText("Loading contacts...");
       let contacts = [];
       if (filePath) {
-        contacts = loadContactsFromExcel(filePath);
+        const res = loadContactsFromExcel(filePath);
+        contacts = res.contacts;
       } else {
-        contacts = loadContactsFromExcel();
+        const res = loadContactsFromExcel();
+        contacts = res.contacts;
       }
 
       // Clear and update table

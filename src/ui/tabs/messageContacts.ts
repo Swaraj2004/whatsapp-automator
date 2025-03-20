@@ -18,6 +18,7 @@ import {
   getRandomInt,
   loadContactsFromExcel,
 } from "../../backend/utils";
+import { createMultiSelectTags } from "../components/multiSelector";
 
 const client = WhatsAppClient.client;
 
@@ -61,6 +62,9 @@ export function createMessageContactsTab(): QWidget {
     if (selectedFiles.length > 0) {
       const filePath = selectedFiles[0];
       contactsFilePath = filePath;
+      const { tags } = loadContactsFromExcel(filePath, logMessage);
+      console.log(tags);
+      tagsSelector.updateTags(tags);
       logMessage(`✅ Contacts file selected: ${filePath}`);
     }
   });
@@ -75,9 +79,12 @@ export function createMessageContactsTab(): QWidget {
   stopSendingButton.setObjectName("stopSendingButton");
   stopSendingButton.setCursor(CursorShape.PointingHandCursor);
 
+  const tagsSelector = createMultiSelectTags(messageContactsTab);
+
   topLayout.addWidget(contactsFileButton);
   topLayout.addWidget(sendMessagesButton);
   topLayout.addWidget(stopSendingButton);
+  topLayout.addWidget(tagsSelector.widget);
 
   const messageLabel = new QLabel();
   messageLabel.setObjectName("messageLabel");
@@ -167,12 +174,29 @@ export function createMessageContactsTab(): QWidget {
       return;
     }
 
-    const entries = loadContactsFromExcel(fileName, logMessage);
+    const { contacts } = loadContactsFromExcel(fileName, logMessage);
+
+    // Get selected tags
+    const selectedTags = tagsSelector.getSelectedTags();
+    const sendToAll = selectedTags.includes("All");
+
+    // Filter contacts by selected tags
+    const filteredContacts = sendToAll
+      ? contacts
+      : contacts.filter((contact) => {
+          if (!contact.tags) return false;
+
+          const contactTags = contact.tags
+            .toString()
+            .split(",")
+            .map((tag) => tag.trim());
+          return selectedTags.some((tag) => contactTags.includes(tag));
+        });
 
     const message = messageInput.toPlainText();
 
     let sentCount = 0;
-    for (const contact of entries) {
+    for (const contact of filteredContacts) {
       if (stopSending) {
         break;
       }

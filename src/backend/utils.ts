@@ -7,6 +7,7 @@ type Contact = {
   user_id: string;
   name?: string;
   number: string;
+  tags?: string;
 };
 
 type Group = {
@@ -37,12 +38,12 @@ export function saveContactsToExcel(contacts: Contact[]): void {
 export function loadContactsFromExcel(
   filePath?: string,
   logger = console.log
-): Contact[] {
+): { contacts: Contact[]; tags: string[] } {
   const targetFile = filePath || CONTACTS_FILE;
 
   if (!targetFile || !fs.existsSync(targetFile)) {
     logger("❌ No contacts file found!");
-    return [];
+    return { contacts: [], tags: ["All"] };
   }
 
   try {
@@ -50,12 +51,34 @@ export function loadContactsFromExcel(
     const sheet = workbook.Sheets["Contacts"];
     if (!sheet) {
       logger("❌ 'Contacts' sheet not found in the file!");
-      return [];
+      return { contacts: [], tags: ["All"] };
     }
-    return XLSX.utils.sheet_to_json<Contact>(sheet);
+
+    const contacts = XLSX.utils.sheet_to_json<Contact>(sheet);
+
+    // Extract all unique tags from the contacts
+    const uniqueTags = new Set<string>();
+    uniqueTags.add("All"); // Always include "All" option
+
+    for (const contact of contacts) {
+      if (contact.tags) {
+        const tagsList = contact.tags
+          .toString()
+          .split(",")
+          .map((tag) => tag.trim());
+        tagsList.forEach((tag) => {
+          if (tag) uniqueTags.add(tag);
+        });
+      }
+    }
+
+    return {
+      contacts,
+      tags: Array.from(uniqueTags),
+    };
   } catch (error) {
     logger(`❌ Error reading contacts file: ${error.message}`);
-    return [];
+    return { contacts: [], tags: ["All"] };
   }
 }
 
