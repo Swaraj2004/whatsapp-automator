@@ -63,7 +63,6 @@ export function createMessageContactsTab(): QWidget {
       const filePath = selectedFiles[0];
       contactsFilePath = filePath;
       const { tags } = loadContactsFromExcel(filePath, logMessage);
-      console.log(tags);
       tagsSelector.updateTags(tags);
       logMessage(`✅ Contacts file selected: ${filePath}`);
     }

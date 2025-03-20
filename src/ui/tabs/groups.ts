@@ -141,9 +141,11 @@ export function createGroupsTab(): QWidget {
       statusLabel.setText("Loading groups...");
       let groups = [];
       if (fileName) {
-        groups = loadGroupsFromExcel(fileName);
+        const res = loadGroupsFromExcel(fileName);
+        groups = res.groups;
       } else {
-        groups = loadGroupsFromExcel();
+        const res = loadGroupsFromExcel();
+        groups = res.groups;
       }
 
       groupsTable.setRowCount(0);

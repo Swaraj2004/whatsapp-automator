@@ -85,14 +85,14 @@ export function createGroupContactsTab(): QWidget {
     if (selectedFiles.length > 0) {
       const filePath = selectedFiles[0];
       groupsFilePath = filePath;
-      const groups = loadGroupsFromExcel(groupsFilePath);
-      if (groups.length === 0) {
+      const response = loadGroupsFromExcel(groupsFilePath);
+      if (response.groups.length === 0) {
         statusLabel.setText("No groups found!");
         return;
       }
 
       statusLabel.setText("Extracting contacts...");
-      const res = await extractMultipleGroupContacts(groups);
+      const res = await extractMultipleGroupContacts(response.groups);
       if (typeof res === "string") {
         statusLabel.setText(res);
       }

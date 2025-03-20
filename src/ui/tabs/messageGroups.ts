@@ -18,6 +18,7 @@ import {
   getRandomInt,
   loadGroupsFromExcel,
 } from "../../backend/utils";
+import { createMultiSelectTags } from "../components/multiSelector";
 
 const client = WhatsAppClient.client;
 
@@ -61,6 +62,8 @@ export function createMessageGroupsTab(): QWidget {
     if (selectedFiles.length > 0) {
       const filePath = selectedFiles[0];
       groupsFilePath = filePath;
+      const { tags } = loadGroupsFromExcel(filePath, logMessage);
+      tagsSelector.updateTags(tags);
       logMessage(`✅ Groups file selected: ${filePath}`);
     }
   });
@@ -75,9 +78,12 @@ export function createMessageGroupsTab(): QWidget {
   stopSendingButton.setObjectName("stopSendingButton");
   stopSendingButton.setCursor(CursorShape.PointingHandCursor);
 
+  const tagsSelector = createMultiSelectTags(messageGroupsTab);
+
   topLayout.addWidget(groupsFileButton);
   topLayout.addWidget(sendMessagesButton);
   topLayout.addWidget(stopSendingButton);
+  topLayout.addWidget(tagsSelector.widget);
 
   const messageLabel = new QLabel();
   messageLabel.setObjectName("messageLabel");
@@ -164,12 +170,27 @@ export function createMessageGroupsTab(): QWidget {
       return;
     }
 
-    const entries = loadGroupsFromExcel(fileName, logMessage);
+    const { groups } = loadGroupsFromExcel(fileName, logMessage);
+
+    const selectedTags = tagsSelector.getSelectedTags();
+    const sendToAll = selectedTags.includes("All");
+
+    const filteredGroups = sendToAll
+      ? groups
+      : groups.filter((group) => {
+          if (!group.tags) return false;
+
+          const groupTags = group.tags
+            .toString()
+            .split(",")
+            .map((tag) => tag.trim());
+          return selectedTags.some((tag) => groupTags.includes(tag));
+        });
 
     const message = messageInput.toPlainText();
 
     let sentCount = 0;
-    for (const group of entries) {
+    for (const group of filteredGroups) {
       if (stopSending) {
         break;
       }

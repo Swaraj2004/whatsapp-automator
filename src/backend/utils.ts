@@ -13,8 +13,9 @@ type Contact = {
 type Group = {
   name: string;
   group_id: string;
-  invite_link: string;
-  admin_only: string;
+  invite_link?: string;
+  admin_only?: string;
+  tags?: string;
 };
 
 export function delayRandom(logger = console.log, min = 6000, max = 15000) {
@@ -92,12 +93,12 @@ export function saveGroupsToExcel(groups: Group[]): void {
 export function loadGroupsFromExcel(
   filePath?: string,
   logger = console.log
-): Group[] {
+): { groups: Group[]; tags: string[] } {
   const targetFile = filePath || GROUPS_FILE;
 
   if (!targetFile || !fs.existsSync(targetFile)) {
     logger("❌ No groups file found!");
-    return [];
+    return { groups: [], tags: ["All"] };
   }
 
   try {
@@ -105,12 +106,33 @@ export function loadGroupsFromExcel(
     const sheet = workbook.Sheets["Groups"];
     if (!sheet) {
       logger("❌ 'Groups' sheet not found in the file!");
-      return [];
+      return { groups: [], tags: ["All"] };
     }
-    return XLSX.utils.sheet_to_json<Group>(sheet);
+    const groups = XLSX.utils.sheet_to_json<Group>(sheet);
+
+    // Extract all unique tags from the contacts
+    const uniqueTags = new Set<string>();
+    uniqueTags.add("All"); // Always include "All" option
+
+    for (const group of groups) {
+      if (group.tags) {
+        const tagsList = group.tags
+          .toString()
+          .split(",")
+          .map((tag) => tag.trim());
+        tagsList.forEach((tag) => {
+          if (tag) uniqueTags.add(tag);
+        });
+      }
+    }
+
+    return {
+      groups,
+      tags: Array.from(uniqueTags),
+    };
   } catch (error) {
     logger(`❌ Error reading groups file: ${error.message}`);
-    return [];
+    return { groups: [], tags: ["All"] };
   }
 }
 
