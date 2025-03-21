@@ -17,6 +17,8 @@ import {
   delayRandom,
   getRandomInt,
   loadGroupsFromExcel,
+  loadSentMessagesGroups,
+  saveSentMessagesGroups,
 } from "../../backend/utils";
 import { createMultiSelectTags } from "../components/multiSelector";
 
@@ -78,11 +80,56 @@ export function createMessageGroupsTab(): QWidget {
   stopSendingButton.setObjectName("stopSendingButton");
   stopSendingButton.setCursor(CursorShape.PointingHandCursor);
 
+  const undoMessagesButton = new QPushButton();
+  undoMessagesButton.setText("Undo Last Messages");
+  undoMessagesButton.setObjectName("undoMessagesButton");
+  undoMessagesButton.setCursor(CursorShape.PointingHandCursor);
+
+  undoMessagesButton.addEventListener("clicked", async () => {
+    let sentMessages = loadSentMessagesGroups();
+
+    if (sentMessages.length === 0) {
+      logMessage("❌ No messages to delete!");
+      return;
+    }
+
+    for (const { chatId, msgId } of sentMessages) {
+      try {
+        const chat = await client.getChatById(chatId);
+        await delayRandom(logMessage, 2000, 5000);
+        const messages = await chat.fetchMessages({ limit: 50 });
+
+        const messageToDelete = messages.find(
+          (msg) => msg.id._serialized === msgId
+        );
+
+        if (messageToDelete) {
+          await messageToDelete.delete(true);
+          logMessage(`🗑️ Deleted message in ${chatId}`);
+        } else {
+          logMessage(
+            `⚠️ Message ${msgId} not found in ${chatId}, might be too old.`
+          );
+        }
+        await delayRandom(logMessage);
+      } catch (error) {
+        logMessage(
+          `❌ Failed to delete message in ${chatId}: ${error.message}`
+        );
+      }
+    }
+    logMessage("✅ Deleted all messages!");
+
+    sentMessages = [];
+    saveSentMessagesGroups(sentMessages);
+  });
+
   const tagsSelector = createMultiSelectTags(messageGroupsTab);
 
   topLayout.addWidget(groupsFileButton);
   topLayout.addWidget(sendMessagesButton);
   topLayout.addWidget(stopSendingButton);
+  topLayout.addWidget(undoMessagesButton);
   topLayout.addWidget(tagsSelector.widget);
 
   const messageLabel = new QLabel();
@@ -154,10 +201,10 @@ export function createMessageGroupsTab(): QWidget {
   logsContainer.setObjectName("logsContainer");
   logsContainer.setReadOnly(true);
 
-  let stopSending = false;
+  let stopSending = true;
   stopSendingButton.addEventListener("clicked", () => {
+    if (!stopSending) logMessage("⛔️ Stopped sending messages!");
     stopSending = true;
-    logMessage("⛔️ Stopped sending messages!");
   });
 
   function logMessage(msg: string) {
@@ -189,6 +236,9 @@ export function createMessageGroupsTab(): QWidget {
 
     const message = messageInput.toPlainText();
 
+    const sentMessages = [];
+    saveSentMessagesGroups(sentMessages);
+
     let sentCount = 0;
     for (const group of filteredGroups) {
       if (stopSending) {
@@ -201,16 +251,20 @@ export function createMessageGroupsTab(): QWidget {
       }
 
       try {
-        // Send text message
         if (message) {
-          await client.sendMessage(group.group_id, message);
+          const sentMsg = await client.sendMessage(group.group_id, message);
           logMessage(
             `✅ Message sent to ${group.name ? group.name : "Unknown Group"}`
           );
+
+          sentMessages.push({
+            chatId: group.group_id,
+            msgId: sentMsg.id._serialized,
+          });
+          saveSentMessagesGroups(sentMessages);
           await delayRandom(logMessage);
         }
 
-        // Send media files if any
         for (const filePath of attachedFiles) {
           if (stopSending) {
             break;
@@ -221,10 +275,16 @@ export function createMessageGroupsTab(): QWidget {
           }
 
           const media = MessageMedia.fromFilePath(filePath);
-          await client.sendMessage(group.group_id, media);
+          const sentMedia = await client.sendMessage(group.group_id, media);
           logMessage(
             `✅ Media sent to ${group.name ? group.name : "Unknown Group"}`
           );
+
+          sentMessages.push({
+            chatId: group.group_id,
+            msgId: sentMedia.id._serialized,
+          });
+          saveSentMessagesGroups(sentMessages);
           await delayRandom(logMessage);
         }
       } catch (error) {
@@ -245,9 +305,10 @@ export function createMessageGroupsTab(): QWidget {
       logMessage("❌ Error: No groups file selected.");
       return;
     }
+    stopSending = false;
     await sendMessagesFromExcel(groupsFilePath);
     if (!stopSending) logMessage("✅ Messages sent to all groups!");
-    stopSending = false;
+    stopSending = true;
   });
 
   layout.addWidget(headerLabel);

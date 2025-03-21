@@ -17,6 +17,8 @@ import {
   delayRandom,
   getRandomInt,
   loadContactsFromExcel,
+  loadSentMessagesContacts,
+  saveSentMessagesContacts,
 } from "../../backend/utils";
 import { createMultiSelectTags } from "../components/multiSelector";
 
@@ -78,11 +80,56 @@ export function createMessageContactsTab(): QWidget {
   stopSendingButton.setObjectName("stopSendingButton");
   stopSendingButton.setCursor(CursorShape.PointingHandCursor);
 
+  const undoMessagesButton = new QPushButton();
+  undoMessagesButton.setText("Undo Last Messages");
+  undoMessagesButton.setObjectName("undoMessagesButton");
+  undoMessagesButton.setCursor(CursorShape.PointingHandCursor);
+
+  undoMessagesButton.addEventListener("clicked", async () => {
+    let sentMessages = loadSentMessagesContacts();
+
+    if (sentMessages.length === 0) {
+      logMessage("❌ No messages to delete!");
+      return;
+    }
+
+    for (const { chatId, msgId } of sentMessages) {
+      try {
+        const chat = await client.getChatById(chatId);
+        await delayRandom(logMessage, 2000, 5000);
+        const messages = await chat.fetchMessages({ limit: 50 });
+
+        const messageToDelete = messages.find(
+          (msg) => msg.id._serialized === msgId
+        );
+
+        if (messageToDelete) {
+          await messageToDelete.delete(true);
+          logMessage(`🗑️ Deleted message in ${chatId}`);
+        } else {
+          logMessage(
+            `⚠️ Message ${msgId} not found in ${chatId}, might be too old.`
+          );
+        }
+        await delayRandom(logMessage);
+      } catch (error) {
+        logMessage(
+          `❌ Failed to delete message in ${chatId}: ${error.message}`
+        );
+      }
+    }
+    logMessage("✅ Deleted all messages!");
+
+    sentMessages = [];
+    saveSentMessagesContacts(sentMessages);
+  });
+
   const tagsSelector = createMultiSelectTags(messageContactsTab);
 
   topLayout.addWidget(contactsFileButton);
   topLayout.addWidget(sendMessagesButton);
   topLayout.addWidget(stopSendingButton);
+  topLayout.addWidget(undoMessagesButton);
   topLayout.addWidget(tagsSelector.widget);
 
   const messageLabel = new QLabel();
@@ -157,10 +204,10 @@ export function createMessageContactsTab(): QWidget {
   logsContainer.setObjectName("logsContainer");
   logsContainer.setReadOnly(true);
 
-  let stopSending = false;
+  let stopSending = true;
   stopSendingButton.addEventListener("clicked", () => {
+    if (!stopSending) logMessage("⛔️ Stopped sending messages!");
     stopSending = true;
-    logMessage("⛔️ Stopped sending messages!");
   });
 
   function logMessage(msg: string) {
@@ -194,6 +241,9 @@ export function createMessageContactsTab(): QWidget {
 
     const message = messageInput.toPlainText();
 
+    const sentMessages = [];
+    saveSentMessagesContacts(sentMessages);
+
     let sentCount = 0;
     for (const contact of filteredContacts) {
       if (stopSending) {
@@ -203,12 +253,18 @@ export function createMessageContactsTab(): QWidget {
       try {
         // Send text message
         if (message) {
-          await client.sendMessage(contact.user_id, message);
+          const sentMsg = await client.sendMessage(contact.user_id, message);
           logMessage(
             `✅ Message sent to ${contact.name ? contact.name + " " : ""}(${
               contact.number
             })`
           );
+
+          sentMessages.push({
+            chatId: contact.user_id,
+            msgId: sentMsg.id._serialized,
+          });
+          saveSentMessagesContacts(sentMessages);
           await delayRandom(logMessage);
         }
 
@@ -223,12 +279,18 @@ export function createMessageContactsTab(): QWidget {
           }
 
           const media = MessageMedia.fromFilePath(filePath);
-          await client.sendMessage(contact.user_id, media);
+          const sentMedia = await client.sendMessage(contact.user_id, media);
           logMessage(
             `✅ Media sent to ${contact.name ? contact.name + " " : ""}(${
               contact.number
             })`
           );
+
+          sentMessages.push({
+            chatId: contact.user_id,
+            msgId: sentMedia.id._serialized,
+          });
+          saveSentMessagesContacts(sentMessages);
           await delayRandom(logMessage);
         }
       } catch (error) {
@@ -249,9 +311,10 @@ export function createMessageContactsTab(): QWidget {
       logMessage("❌ Error: No contacts file selected.");
       return;
     }
+    stopSending = false;
     await sendMessagesFromExcel(contactsFilePath);
     if (!stopSending) logMessage("✅ Messages sent to all contacts!");
-    stopSending = false;
+    stopSending = true;
   });
 
   // Adding Widgets to Layout

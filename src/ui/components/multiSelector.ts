@@ -162,8 +162,8 @@ export function createMultiSelectTags(parentWidget) {
         padding: 10px;
       }
       QCheckBox {
-        padding: 5px;
-        width: 280px;
+        padding-bottom: 5px;
+        width: 290px;
       }
       #dialogButtonsContainer {
         flex-direction: row;
@@ -200,7 +200,6 @@ export function createMultiSelectTags(parentWidget) {
   tagsContainer.setStyleSheet(`
     #tagsContainer {
       flex-direction: row;
-      margin-left: 10px;
     }
     #tagsLabel {
       font-size: 14px;

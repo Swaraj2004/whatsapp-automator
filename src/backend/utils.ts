@@ -1,6 +1,12 @@
 import * as fs from "fs";
 import * as XLSX from "xlsx";
-import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
+import {
+  CONTACTS_FILE,
+  GROUP_CONTACTS_FILE,
+  GROUPS_FILE,
+  SENT_MESSAGES_CONTACTS_FILE,
+  SENT_MESSAGES_GROUPS_FILE,
+} from "../consts";
 
 type Contact = {
   group_id?: string;
@@ -166,4 +172,32 @@ export function loadGroupContactsFromExcel(
     logger(`❌ Error reading group contacts file: ${error.message}`);
     return [];
   }
+}
+
+export function loadSentMessagesContacts() {
+  if (fs.existsSync(SENT_MESSAGES_CONTACTS_FILE)) {
+    return JSON.parse(fs.readFileSync(SENT_MESSAGES_CONTACTS_FILE, "utf-8"));
+  }
+  return [];
+}
+
+export function saveSentMessagesContacts(messages) {
+  fs.writeFileSync(
+    SENT_MESSAGES_CONTACTS_FILE,
+    JSON.stringify(messages, null, 2)
+  );
+}
+
+export function loadSentMessagesGroups() {
+  if (fs.existsSync(SENT_MESSAGES_GROUPS_FILE)) {
+    return JSON.parse(fs.readFileSync(SENT_MESSAGES_GROUPS_FILE, "utf-8"));
+  }
+  return [];
+}
+
+export function saveSentMessagesGroups(messages) {
+  fs.writeFileSync(
+    SENT_MESSAGES_GROUPS_FILE,
+    JSON.stringify(messages, null, 2)
+  );
 }
