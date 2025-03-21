@@ -246,7 +246,7 @@ export function createMessageGroupsTab(): QWidget {
       }
 
       if (group.hasOwnProperty("admin_only") && group.admin_only === "Yes") {
-        console.log(`⚠️ Skipping non-admin group: ${group.name}`);
+        logMessage(`⚠️ Skipping non-admin group: ${group.name}`);
         continue;
       }
 

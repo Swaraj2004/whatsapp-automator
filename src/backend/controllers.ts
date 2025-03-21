@@ -40,19 +40,19 @@ export async function extractGroups() {
     if (chat.isGroup) {
       let inviteLink = "N/A";
 
-      try {
-        const groupChat = chat as unknown as {
-          getInviteCode: () => Promise<string>;
-          groupMetadata: { announce: boolean };
-        };
-        inviteLink = groupChat.groupMetadata.announce
-          ? "N/A"
-          : `https://chat.whatsapp.com/${await groupChat.getInviteCode()}`;
-      } catch (error) {
-        console.log(
-          `⚠️ Failed to get invite link for ${chat.name}: ${error.message}`
-        );
-      }
+      // try {
+      //   const groupChat = chat as unknown as {
+      //     getInviteCode: () => Promise<string>;
+      //     groupMetadata: { announce: boolean };
+      //   };
+      //   inviteLink = groupChat.groupMetadata.announce
+      //     ? "N/A"
+      //     : `https://chat.whatsapp.com/${await groupChat.getInviteCode()}`;
+      // } catch (error) {
+      //   console.log(
+      //     `⚠️ Failed to get invite link for ${chat.name}: ${error.message}`
+      //   );
+      // }
 
       groups.push({
         name: chat.name,
@@ -61,7 +61,7 @@ export async function extractGroups() {
         admin_only: (chat as any).groupMetadata.announce ? "Yes" : "No",
       });
 
-      await delayRandom();
+      // await delayRandom();
     }
   }
 

@@ -46,13 +46,14 @@
     ]
   },
   "appImage": {
+    "skip": true,
     "prePack": [
       "cp $pruneStep_trashDirectory/packaging/linux/nodeguiapp_appimage.desktop $appImageStep_appImageSourceDirectory",
       "cp $pruneStep_trashDirectory/packaging/linux/icons/hicolor/32x32/apps/nodeguiapp.png $appImageStep_appImageSourceDirectory"
     ]
   },
   "nsis": {
-    "skip": false,
+    "skip": true,
     "description": "A whatsapp automator",
     "detailColors": "3db54a 000000",
     "appTitle": "WhatsAppAutomator",
@@ -60,6 +61,7 @@
     "uninstallerIcon": "$pruneStep_trashDirectory/packaging/windows/nodeguiapp.ico"
   },
   "dmg": {
+    "skip": true,
     "applicationIcon": "$pruneStep_trashDirectory/packaging/macos/nodeguiapp.icns",
     "applicationTitle": "WhatsAppAutomator",
     "nsHumanReadableCopyright": "Copyright 2023 Someone",
