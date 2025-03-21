@@ -79,9 +79,11 @@ export function loadContactsFromExcel(
       }
     }
 
+    const sortedTags = ["All", ...Array.from(uniqueTags).sort()];
+
     return {
       contacts,
-      tags: Array.from(uniqueTags),
+      tags: sortedTags,
     };
   } catch (error) {
     logger(`❌ Error reading contacts file: ${error.message}`);
@@ -132,9 +134,11 @@ export function loadGroupsFromExcel(
       }
     }
 
+    const sortedTags = ["All", ...Array.from(uniqueTags).sort()];
+
     return {
       groups,
-      tags: Array.from(uniqueTags),
+      tags: sortedTags,
     };
   } catch (error) {
     logger(`❌ Error reading groups file: ${error.message}`);
