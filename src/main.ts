@@ -5,6 +5,7 @@ import {
   QTabWidget,
   QWidget,
 } from "@nodegui/nodegui";
+import path from "path";
 import WhatsAppClient from "./backend/client";
 import { createContactsTab } from "./ui/tabs/contacts";
 import { createGroupContactsTab } from "./ui/tabs/groupContacts";
@@ -15,6 +16,11 @@ import { createMessageGroupsTab } from "./ui/tabs/messageGroups";
 // Initialize QApplication
 const mainWindow = new QMainWindow();
 mainWindow.setWindowTitle("WhatsApp Bulk Messenger");
+
+// Set application icon
+const iconPath = path.join(__dirname, "../assets/icon.ico");
+const appIcon = new QIcon(iconPath);
+mainWindow.setWindowIcon(appIcon);
 
 // Set minimum window size
 mainWindow.setMinimumSize(1280, 720);
