@@ -1,6 +1,6 @@
 build/
 dist/
 node_modules/
-tmp-jam-pack-nodegui/
+distributable/
 data/
 .wwebjs_cache/
