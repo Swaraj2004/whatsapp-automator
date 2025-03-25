@@ -15,5 +15,7 @@ export const SENT_MESSAGES_GROUPS_FILE = path.join(
 export const GROUPS_FILE = path.join(BASE_DIR, "groups.xlsx");
 export const CONTACTS_FILE = path.join(BASE_DIR, "contacts.xlsx");
 export const GROUP_CONTACTS_FILE = path.join(BASE_DIR, "group_contacts.xlsx");
-export const CHROME_PATH =
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+export const CHROME_PATHS = [
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+];

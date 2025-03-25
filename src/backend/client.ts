@@ -1,6 +1,13 @@
 import { EventEmitter } from "events";
+import fs from "fs";
 import { Client, LocalAuth } from "whatsapp-web.js";
-import { CHROME_PATH, SESSION_PATH } from "../consts";
+import { CHROME_PATHS, SESSION_PATH } from "../consts";
+
+const CHROME_PATH = CHROME_PATHS.find((path) => fs.existsSync(path)) || "";
+
+if (!CHROME_PATH) {
+  console.error("❌ Chrome executable not found!");
+}
 
 class WhatsAppClient extends EventEmitter {
   client: Client;
