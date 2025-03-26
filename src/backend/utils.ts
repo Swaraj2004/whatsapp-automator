@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as XLSX from "xlsx";
 import {
+  CONFIG_FILE,
   CONTACTS_FILE,
   GROUP_CONTACTS_FILE,
   GROUPS_FILE,
@@ -23,6 +24,50 @@ type Group = {
   admin_only?: string;
   tags?: string;
 };
+
+type Config = {
+  delay: {
+    min: number;
+    max: number;
+  };
+};
+
+export function getConfig() {
+  try {
+    if (!fs.existsSync(CONFIG_FILE)) {
+      return {
+        delay: {
+          min: 6000,
+          max: 15000,
+        },
+      };
+    }
+    const data = fs.readFileSync(CONFIG_FILE, "utf8");
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("Error reading config:", error);
+    return {
+      delay: {
+        min: 6000,
+        max: 15000,
+      },
+    };
+  }
+}
+
+export function setConfig(newConfig: Config) {
+  try {
+    const currentConfig = getConfig();
+    const updatedConfig = { ...currentConfig, ...newConfig };
+    fs.writeFileSync(
+      CONFIG_FILE,
+      JSON.stringify(updatedConfig, null, 2),
+      "utf8"
+    );
+  } catch (error) {
+    console.error("Error writing config:", error);
+  }
+}
 
 export function delayRandom(logger = console.log, min = 6000, max = 15000) {
   const range = max - min;

@@ -15,6 +15,7 @@ import { MessageMedia } from "whatsapp-web.js";
 import WhatsAppClient from "../../backend/client";
 import {
   delayRandom,
+  getConfig,
   getRandomInt,
   loadGroupsFromExcel,
   loadSentMessagesGroups,
@@ -93,6 +94,8 @@ export function createMessageGroupsTab(): QWidget {
       return;
     }
 
+    const { delay } = await getConfig();
+
     for (const { chatId, msgId } of sentMessages) {
       try {
         const chat = await client.getChatById(chatId);
@@ -111,7 +114,7 @@ export function createMessageGroupsTab(): QWidget {
             `⚠️ Message ${msgId} not found in ${chatId}, might be too old.`
           );
         }
-        await delayRandom(logMessage);
+        await delayRandom(logMessage, delay.min, delay.max);
       } catch (error) {
         logMessage(
           `❌ Failed to delete message in ${chatId}: ${error.message}`
@@ -239,6 +242,8 @@ export function createMessageGroupsTab(): QWidget {
     const sentMessages = [];
     saveSentMessagesGroups(sentMessages);
 
+    const { delay } = await getConfig();
+
     let sentCount = 0;
     for (const group of filteredGroups) {
       if (stopSending) {
@@ -262,7 +267,7 @@ export function createMessageGroupsTab(): QWidget {
             msgId: sentMsg.id._serialized,
           });
           saveSentMessagesGroups(sentMessages);
-          await delayRandom(logMessage);
+          await delayRandom(logMessage, delay.min, delay.max);
         }
 
         for (const filePath of attachedFiles) {
@@ -285,7 +290,7 @@ export function createMessageGroupsTab(): QWidget {
             msgId: sentMedia.id._serialized,
           });
           saveSentMessagesGroups(sentMessages);
-          await delayRandom(logMessage);
+          await delayRandom(logMessage, delay.min, delay.max);
         }
       } catch (error) {
         logMessage(`❌ Error sending message: ${error.message}`);

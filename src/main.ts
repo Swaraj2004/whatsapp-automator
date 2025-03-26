@@ -12,6 +12,7 @@ import { createGroupContactsTab } from "./ui/tabs/groupContacts";
 import { createGroupsTab } from "./ui/tabs/groups";
 import { createMessageContactsTab } from "./ui/tabs/messageContacts";
 import { createMessageGroupsTab } from "./ui/tabs/messageGroups";
+import { createSettingsTab } from "./ui/tabs/settings";
 
 // Initialize QApplication
 const mainWindow = new QMainWindow();
@@ -47,6 +48,7 @@ tabWidget.addTab(createGroupsTab(), new QIcon(), "Groups");
 tabWidget.addTab(createGroupContactsTab(), new QIcon(), "Group Contacts");
 tabWidget.addTab(createMessageContactsTab(), new QIcon(), "Message Contacts");
 tabWidget.addTab(createMessageGroupsTab(), new QIcon(), "Message Groups");
+tabWidget.addTab(createSettingsTab(), new QIcon(), "Settings");
 
 // Make the tab widget fill the available space
 tabWidget.setStyleSheet(`

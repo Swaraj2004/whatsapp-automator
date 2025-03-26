@@ -15,6 +15,7 @@ import { MessageMedia } from "whatsapp-web.js";
 import WhatsAppClient from "../../backend/client";
 import {
   delayRandom,
+  getConfig,
   getRandomInt,
   loadContactsFromExcel,
   loadSentMessagesContacts,
@@ -93,6 +94,8 @@ export function createMessageContactsTab(): QWidget {
       return;
     }
 
+    const { delay } = await getConfig();
+
     for (const { chatId, msgId } of sentMessages) {
       try {
         const chat = await client.getChatById(chatId);
@@ -111,7 +114,7 @@ export function createMessageContactsTab(): QWidget {
             `⚠️ Message ${msgId} not found in ${chatId}, might be too old.`
           );
         }
-        await delayRandom(logMessage);
+        await delayRandom(logMessage, delay.min, delay.max);
       } catch (error) {
         logMessage(
           `❌ Failed to delete message in ${chatId}: ${error.message}`
@@ -244,6 +247,8 @@ export function createMessageContactsTab(): QWidget {
     const sentMessages = [];
     saveSentMessagesContacts(sentMessages);
 
+    const { delay } = await getConfig();
+
     let sentCount = 0;
     for (const contact of filteredContacts) {
       if (stopSending) {
@@ -265,7 +270,7 @@ export function createMessageContactsTab(): QWidget {
             msgId: sentMsg.id._serialized,
           });
           saveSentMessagesContacts(sentMessages);
-          await delayRandom(logMessage);
+          await delayRandom(logMessage, delay.min, delay.max);
         }
 
         // Send media files if any
@@ -291,7 +296,7 @@ export function createMessageContactsTab(): QWidget {
             msgId: sentMedia.id._serialized,
           });
           saveSentMessagesContacts(sentMessages);
-          await delayRandom(logMessage);
+          await delayRandom(logMessage, delay.min, delay.max);
         }
       } catch (error) {
         logMessage(`❌ Error sending message: ${error.message}`);

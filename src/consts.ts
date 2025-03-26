@@ -12,6 +12,7 @@ export const SENT_MESSAGES_GROUPS_FILE = path.join(
   BASE_DIR,
   "sent_messages_groups.json"
 );
+export const CONFIG_FILE = path.join(BASE_DIR, "config.json");
 export const GROUPS_FILE = path.join(BASE_DIR, "groups.xlsx");
 export const CONTACTS_FILE = path.join(BASE_DIR, "contacts.xlsx");
 export const GROUP_CONTACTS_FILE = path.join(BASE_DIR, "group_contacts.xlsx");
