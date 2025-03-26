@@ -78,18 +78,20 @@ export function createGroupsTab(): QWidget {
   buttonLayout.addWidget(refreshButton);
   buttonLayout.addWidget(statusLabel);
 
-  const groupsTable = new QTableWidget(0, 3);
+  const groupsTable = new QTableWidget(0, 4);
   groupsTable.setObjectName("groupsTable");
   groupsTable.setHorizontalHeaderLabels([
     "Group Name",
     "Group ID",
+    "Total Members",
     "Admin Only",
     // "Invite Link",
   ]);
   groupsTable.setColumnWidth(0, 350);
   groupsTable.setColumnWidth(1, 250);
-  groupsTable.setColumnWidth(2, 100);
-  // groupsTable.setColumnWidth(3, 250);
+  groupsTable.setColumnWidth(2, 150);
+  groupsTable.setColumnWidth(3, 150);
+  // groupsTable.setColumnWidth(4, 250);
   groupsTable.setMinimumSize(800, 550);
 
   mainLayout.addWidget(headerLabel);
@@ -155,13 +157,17 @@ export function createGroupsTab(): QWidget {
         groups.forEach((group, index) => {
           const nameItem = new QTableWidgetItem(group.name || "N/A");
           const idItem = new QTableWidgetItem(group.group_id || "N/A");
+          const membersItem = new QTableWidgetItem(
+            `${group.total_members}` || "N/A"
+          );
           const adminItem = new QTableWidgetItem(group.admin_only || "N/A");
           // const linkItem = new QTableWidgetItem(group.invite_link || "N/A");
 
           groupsTable.setItem(index, 0, nameItem);
           groupsTable.setItem(index, 1, idItem);
-          groupsTable.setItem(index, 2, adminItem);
-          // groupsTable.setItem(index, 3, linkItem);
+          groupsTable.setItem(index, 2, membersItem);
+          groupsTable.setItem(index, 3, adminItem);
+          // groupsTable.setItem(index, 4, linkItem);
         });
         statusLabel.setText(`Loaded ${groups.length} groups.`);
       } else {

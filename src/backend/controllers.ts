@@ -38,7 +38,7 @@ export async function extractGroups() {
 
   for (const chat of chats) {
     if (chat.isGroup) {
-      let inviteLink = "N/A";
+      // let inviteLink = "N/A";
 
       // try {
       //   const groupChat = chat as unknown as {
@@ -57,7 +57,8 @@ export async function extractGroups() {
       groups.push({
         name: chat.name,
         group_id: chat.id._serialized,
-        invite_link: inviteLink,
+        total_members: (chat as any).groupMetadata.participants.length,
+        // invite_link: inviteLink,
         admin_only: (chat as any).groupMetadata.announce ? "Yes" : "No",
       });
 

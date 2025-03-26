@@ -20,6 +20,7 @@ type Contact = {
 type Group = {
   name: string;
   group_id: string;
+  total_members: number;
   invite_link?: string;
   admin_only?: string;
   tags?: string;
