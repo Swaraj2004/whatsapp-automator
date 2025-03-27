@@ -245,7 +245,7 @@ export function createMessageGroupsTab(): QWidget {
     const { delay } = await getConfig();
 
     let sentCount = 0;
-    for (const group of filteredGroups) {
+    for (const [i, group] of filteredGroups.entries()) {
       if (stopSending) {
         break;
       }
@@ -259,7 +259,9 @@ export function createMessageGroupsTab(): QWidget {
         if (message) {
           const sentMsg = await client.sendMessage(group.group_id, message);
           logMessage(
-            `✅ Message sent to ${group.name ? group.name : "Unknown Group"}`
+            `✅ (${i + 1}/${filteredGroups.length}) Message sent to ${
+              group.name ? group.name : "Unknown Group"
+            }`
           );
 
           sentMessages.push({
@@ -282,7 +284,9 @@ export function createMessageGroupsTab(): QWidget {
           const media = MessageMedia.fromFilePath(filePath);
           const sentMedia = await client.sendMessage(group.group_id, media);
           logMessage(
-            `✅ Media sent to ${group.name ? group.name : "Unknown Group"}`
+            `✅ (${i + 1}/${filteredGroups.length}) Media sent to ${
+              group.name ? group.name : "Unknown Group"
+            }`
           );
 
           sentMessages.push({
@@ -299,7 +303,7 @@ export function createMessageGroupsTab(): QWidget {
       sentCount++;
       if (sentCount % getRandomInt(10, 20) === 0) {
         logMessage("⏳ Taking a longer break to avoid detection...");
-        await delayRandom(logMessage, 15000, 30000);
+        await delayRandom(logMessage, 20000, 30000);
       }
     }
   }
@@ -357,7 +361,7 @@ export function createMessageGroupsTab(): QWidget {
       margin-right: 10px;
     }
     QPushButton:hover {
-      background-color:#1A66BD;
+      background-color: #2074d4;
     }
     #topContainer {
       flex-direction: row;
@@ -365,13 +369,14 @@ export function createMessageGroupsTab(): QWidget {
     }
     #bottomContainer {
       flex-direction: row;
+      height: 555px;
     }
     #leftContainer {
       flex: 1;
       margin-right: 10px;
     }
     #messageInput {
-      min-height: 220px;
+      min-height: 266px;
       border: 1px solid #ccc;
       border-radius: 4px;
       padding: 5px;

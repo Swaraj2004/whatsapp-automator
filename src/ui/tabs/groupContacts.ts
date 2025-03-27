@@ -8,6 +8,7 @@ import {
   QPushButton,
   QTableWidget,
   QTableWidgetItem,
+  QTextEdit,
   QWidget,
 } from "@nodegui/nodegui";
 import {
@@ -41,10 +42,6 @@ export function createGroupContactsTab(): QWidget {
   const buttonLayout = new FlexLayout();
   buttonContainer.setLayout(buttonLayout);
 
-  // Status label
-  const statusLabel = new QLabel();
-  statusLabel.setObjectName("statusLabel");
-
   // Input field for Group ID
   const groupIdInput = new QLineEdit();
   groupIdInput.setObjectName("groupIdInput");
@@ -56,17 +53,15 @@ export function createGroupContactsTab(): QWidget {
   extractByIdButton.setObjectName("extractByIdButton");
   extractByIdButton.setCursor(CursorShape.PointingHandCursor);
   extractByIdButton.addEventListener("clicked", async () => {
+    logsContainer.clear();
     const groupId = groupIdInput.text().trim();
     if (!groupId) {
-      statusLabel.setText("Please enter a valid Group ID!");
+      logMessage("❌ Please enter a valid Group ID!");
       return;
     }
 
-    statusLabel.setText("Extracting contacts...");
-    const res = await extractGroupContacts(groupId);
-    if (typeof res === "string") {
-      statusLabel.setText(res);
-    }
+    logMessage("✅ Started extracting contacts by ID...");
+    await extractGroupContacts(groupId, logMessage);
     loadGroupContacts();
   });
 
@@ -77,6 +72,7 @@ export function createGroupContactsTab(): QWidget {
 
   let groupsFilePath = "";
   extractByExcelButton.addEventListener("clicked", async () => {
+    logsContainer.clear();
     const fileDialog = new QFileDialog();
     fileDialog.setNameFilter("Excel Files (*.xlsx)");
     fileDialog.exec();
@@ -87,15 +83,12 @@ export function createGroupContactsTab(): QWidget {
       groupsFilePath = filePath;
       const response = loadGroupsFromExcel(groupsFilePath);
       if (response.groups.length === 0) {
-        statusLabel.setText("No groups found!");
+        logMessage("❌ No groups found!");
         return;
       }
 
-      statusLabel.setText("Extracting contacts...");
-      const res = await extractMultipleGroupContacts(response.groups);
-      if (typeof res === "string") {
-        statusLabel.setText(res);
-      }
+      logMessage("✅ Started extracting contacts by Excel...");
+      await extractMultipleGroupContacts(response.groups, logMessage);
       loadGroupContacts();
     }
   });
@@ -103,25 +96,43 @@ export function createGroupContactsTab(): QWidget {
   buttonLayout.addWidget(groupIdInput);
   buttonLayout.addWidget(extractByIdButton);
   buttonLayout.addWidget(extractByExcelButton);
-  buttonLayout.addWidget(statusLabel);
+
+  const bottomContainer = new QWidget();
+  bottomContainer.setObjectName("bottomContainer");
+  const bottomLayout = new FlexLayout();
+  bottomContainer.setLayout(bottomLayout);
 
   // Table to display group contacts
-  const groupContactsTable = new QTableWidget(0, 3);
+  const groupContactsTable = new QTableWidget(0, 4);
   groupContactsTable.setObjectName("groupContactsTable");
   groupContactsTable.setHorizontalHeaderLabels([
     "Group ID",
+    "Group Name",
     "User ID",
     "Number",
   ]);
-  groupContactsTable.setColumnWidth(0, 250);
-  groupContactsTable.setColumnWidth(1, 250);
-  groupContactsTable.setColumnWidth(2, 250);
-  groupContactsTable.setMinimumSize(800, 550);
+  groupContactsTable.setColumnWidth(0, 240);
+  groupContactsTable.setColumnWidth(1, 240);
+  groupContactsTable.setColumnWidth(2, 160);
+  groupContactsTable.setColumnWidth(3, 150);
+  groupContactsTable.setMinimumSize(750, 550);
+
+  const logsContainer = new QTextEdit();
+  logsContainer.setPlaceholderText("Logs from function");
+  logsContainer.setObjectName("logsContainer");
+  logsContainer.setReadOnly(true);
+
+  function logMessage(msg: string) {
+    logsContainer.append(msg + "\n");
+  }
+
+  bottomLayout.addWidget(groupContactsTable);
+  bottomLayout.addWidget(logsContainer);
 
   // Add widgets to layout
   mainLayout.addWidget(headerLabel);
   mainLayout.addWidget(buttonContainer);
-  mainLayout.addWidget(groupContactsTable);
+  mainLayout.addWidget(bottomContainer);
 
   // Style
   groupContactsTab.setStyleSheet(`
@@ -156,9 +167,21 @@ export function createGroupContactsTab(): QWidget {
       min-width: 160px;
     }
     QPushButton:hover {
-      background-color: #1A66BD;
+      background-color: #2074d4;
+    }
+    #bottomContainer {
+      flex-direction: row;
+      height: 550px;
+    }
+    #logsContainer {
+      width: 400px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 5px;
+      margin-left: 10px;
     }
     #groupContactsTable {
+      flex: 1;
       border: 1px solid #ccc;
       border-radius: 4px;
       gridline-color: #eee;
@@ -174,7 +197,6 @@ export function createGroupContactsTab(): QWidget {
   // Load contacts from Excel
   async function loadGroupContacts() {
     try {
-      statusLabel.setText("Loading contacts...");
       const contacts = loadGroupContactsFromExcel();
 
       groupContactsTable.setRowCount(0);
@@ -190,24 +212,28 @@ export function createGroupContactsTab(): QWidget {
           groupContactsTable.setItem(
             index,
             1,
-            new QTableWidgetItem(contact.user_id || "N/A")
+            new QTableWidgetItem(contact.group_name || "N/A")
           );
           groupContactsTable.setItem(
             index,
             2,
+            new QTableWidgetItem(contact.user_id || "N/A")
+          );
+          groupContactsTable.setItem(
+            index,
+            3,
             new QTableWidgetItem(contact.number || "N/A")
           );
         });
-        statusLabel.setText(`Loaded ${contacts.length} contacts.`);
+        logMessage(`✅ Loaded ${contacts.length} contacts.`);
       } else {
-        statusLabel.setText("No contacts found");
+        logMessage("❌ No contacts found");
       }
 
       groupContactsTable.show();
       groupContactsTab.update();
     } catch (error) {
-      console.error("Error loading group contacts:", error);
-      statusLabel.setText(`Error: ${error.message || "Unknown error"}`);
+      logMessage(`❌ Error: ${error.message || "Unknown error"}`);
     }
   }
 

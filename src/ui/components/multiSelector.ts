@@ -180,7 +180,7 @@ export function createMultiSelectTags(parentWidget) {
         margin-left: 10px;
       }
       QPushButton:hover {
-        background-color: #1A66BD;
+        background-color: #2074d4;
       }
     `);
 
@@ -216,7 +216,7 @@ export function createMultiSelectTags(parentWidget) {
       font-weight: bold;
     }
     #tagsButton:hover {
-      background-color: #1A66BD;
+      background-color: #2074d4;
     }
   `);
 

@@ -91,7 +91,7 @@ export function createContactsTab(): QWidget {
   contactsTable.setObjectName("contactsTable");
   contactsTable.setColumnCount(3);
   contactsTable.setHorizontalHeaderLabels(["User ID", "Name", "Number"]);
-  contactsTable.setColumnWidth(0, 150);
+  contactsTable.setColumnWidth(0, 250);
   contactsTable.setColumnWidth(1, 250);
   contactsTable.setColumnWidth(2, 250);
 
@@ -129,7 +129,7 @@ export function createContactsTab(): QWidget {
       margin-right: 10px;
     }
     QPushButton:hover {
-      background-color:#1A66BD;
+      background-color: #2074d4;
     }
     #contactsTable {
       border: 1px solid #ccc;

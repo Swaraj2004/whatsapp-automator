@@ -11,6 +11,7 @@ import {
 
 type Contact = {
   group_id?: string;
+  group_name?: string;
   user_id: string;
   name?: string;
   number: string;

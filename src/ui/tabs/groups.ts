@@ -87,7 +87,7 @@ export function createGroupsTab(): QWidget {
     "Admin Only",
     // "Invite Link",
   ]);
-  groupsTable.setColumnWidth(0, 350);
+  groupsTable.setColumnWidth(0, 400);
   groupsTable.setColumnWidth(1, 250);
   groupsTable.setColumnWidth(2, 150);
   groupsTable.setColumnWidth(3, 150);
@@ -123,7 +123,7 @@ export function createGroupsTab(): QWidget {
       margin-right: 10px;
     }
     QPushButton:hover {
-      background-color: #1A66BD;
+      background-color: #2074d4;
     }
     #groupsTable {
       border: 1px solid #ccc;

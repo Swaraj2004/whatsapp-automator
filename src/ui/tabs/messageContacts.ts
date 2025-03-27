@@ -250,7 +250,7 @@ export function createMessageContactsTab(): QWidget {
     const { delay } = await getConfig();
 
     let sentCount = 0;
-    for (const contact of filteredContacts) {
+    for (const [i, contact] of filteredContacts.entries()) {
       if (stopSending) {
         break;
       }
@@ -260,9 +260,9 @@ export function createMessageContactsTab(): QWidget {
         if (message) {
           const sentMsg = await client.sendMessage(contact.user_id, message);
           logMessage(
-            `✅ Message sent to ${contact.name ? contact.name + " " : ""}(${
-              contact.number
-            })`
+            `✅ (${i + 1}/${filteredContacts.length}) Message sent to ${
+              contact.name ? contact.name + " " : ""
+            }(${contact.number})`
           );
 
           sentMessages.push({
@@ -286,9 +286,9 @@ export function createMessageContactsTab(): QWidget {
           const media = MessageMedia.fromFilePath(filePath);
           const sentMedia = await client.sendMessage(contact.user_id, media);
           logMessage(
-            `✅ Media sent to ${contact.name ? contact.name + " " : ""}(${
-              contact.number
-            })`
+            `✅ (${i + 1}/${filteredContacts.length}) Media sent to ${
+              contact.name ? contact.name + " " : ""
+            }(${contact.number})`
           );
 
           sentMessages.push({
@@ -305,7 +305,7 @@ export function createMessageContactsTab(): QWidget {
       sentCount++;
       if (sentCount % getRandomInt(10, 20) === 0) {
         logMessage("⏳ Taking a longer break to avoid detection...");
-        await delayRandom(logMessage, 15000, 30000);
+        await delayRandom(logMessage, 20000, 30000);
       }
     }
   }
@@ -365,7 +365,7 @@ export function createMessageContactsTab(): QWidget {
       margin-right: 10px;
     }
     QPushButton:hover {
-      background-color:#1A66BD;
+      background-color: #2074d4;
     }
     #topContainer {
       flex-direction: row;
@@ -373,13 +373,14 @@ export function createMessageContactsTab(): QWidget {
     }
     #bottomContainer {
       flex-direction: row;
+      height: 555px;
     }
     #leftContainer {
       flex: 1;
       margin-right: 10px;
     }
     #messageInput {
-      min-height: 220px;
+      min-height: 266px;
       border: 1px solid #ccc;
       border-radius: 4px;
       padding: 5px;

@@ -129,7 +129,7 @@ export function createSettingsTab(): QWidget {
       font-weight: bold;
     }
     #saveButton:hover {
-      background-color: #1A66BD;
+      background-color: #2074d4;
     }
     #messageLabel {
       color: mediumseagreen;

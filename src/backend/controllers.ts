@@ -1,7 +1,9 @@
+import { group } from "console";
 import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
 import WhatsAppClient from "./client";
 import {
   delayRandom,
+  getRandomInt,
   saveContactsToExcel,
   saveGroupContactsToExcel,
   saveGroupsToExcel,
@@ -76,67 +78,83 @@ export async function extractGroups() {
 }
 
 export async function extractGroupContacts(
-  groupId: string
-): Promise<string | void> {
-  console.log("Extracting contacts from group", groupId);
+  groupId: string,
+  logger = console.log
+) {
   try {
     const chat = await client.getChatById(groupId).catch(() => null);
 
     if (!chat || !chat.isGroup) {
-      return "Group not found! Please enter a valid group ID.";
+      logger("❌ Group not found! Please enter a valid group ID.");
     }
 
     // Extract participants
     const participants = chat.groupMetadata.participants.map((participant) => ({
       group_id: groupId,
+      group_name: chat.name,
       user_id: participant.id._serialized,
       number: participant.id.user,
     }));
 
     if (participants.length === 0) {
-      return "No contacts found in this group!";
+      logger("❌ No contacts found in this group!");
     }
 
     saveGroupContactsToExcel(participants);
-    console.log(
+    logger(
       `✅ Contacts from group '${chat.name}' saved to '${GROUP_CONTACTS_FILE}'`
     );
   } catch (error) {
-    console.error("Error extracting group contacts:", error);
-    return `Error: ${error.message || "Unknown error"}`;
+    logger(`❌ Error: ${error.message || "Unknown error"}`);
   }
 }
 
 export async function extractMultipleGroupContacts(
-  groups: { group_id: string; name: string }[]
+  groups: { group_id: string; name: string }[],
+  logger = console.log
 ) {
-  let allContacts = [];
+  try {
+    let allContacts = [];
 
-  for (const group of groups) {
-    if (!group.group_id) continue;
+    let extractCount = 0;
+    for (const [i, group] of groups.entries()) {
+      if (!group.group_id) continue;
 
-    const chat = await client.getChatById(group.group_id).catch(() => null);
-    if (!chat.isGroup) continue;
+      const chat = await client.getChatById(group.group_id).catch(() => null);
+      if (!chat.isGroup) continue;
 
-    console.log(
-      `📥 Fetching contacts from ${group.name} (${group.group_id})...`
-    );
+      const participants = chat.participants.map((p) => ({
+        group_id: group.group_id,
+        group_name: group.name,
+        user_id: p.id._serialized,
+        number: p.id.user,
+      }));
 
-    const participants = chat.participants.map((p) => ({
-      group_id: group.group_id,
-      user_id: p.id._serialized,
-      number: p.id.user,
-    }));
+      logger(
+        `📥 (${i + 1}/${groups.length}) Extracted contacts from ${
+          group.name
+        } (${group.group_id}).`
+      );
 
-    await delayRandom(console.log, 10000, 20000);
+      await delayRandom(logger, 10000, 20000);
 
-    allContacts.push(...participants);
+      allContacts.push(...participants);
+
+      extractCount++;
+      if (extractCount % getRandomInt(10, 20) === 0) {
+        logger("⏳ Taking a longer break to avoid detection...");
+        await delayRandom(logger, 20000, 30000);
+      }
+    }
+
+    if (allContacts.length === 0) {
+      logger("❌ No contacts found in the groups.");
+      return;
+    }
+
+    saveGroupContactsToExcel(allContacts);
+    logger(`✅ Contacts from groups saved to '${GROUP_CONTACTS_FILE}'`);
+  } catch (error) {
+    logger(`❌ Error: ${error.message || "Unknown error"}`);
   }
-
-  if (allContacts.length === 0) {
-    return "❌ No contacts found in the groups.";
-  }
-
-  saveGroupContactsToExcel(allContacts);
-  return `✅ Contacts saved to ${GROUP_CONTACTS_FILE}`;
 }
