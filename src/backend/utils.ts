@@ -8,31 +8,7 @@ import {
   SENT_MESSAGES_CONTACTS_FILE,
   SENT_MESSAGES_GROUPS_FILE,
 } from "../consts";
-
-type Contact = {
-  group_id?: string;
-  group_name?: string;
-  user_id: string;
-  name?: string;
-  number: string;
-  tags?: string;
-};
-
-type Group = {
-  name: string;
-  group_id: string;
-  total_members: number;
-  invite_link?: string;
-  admin_only?: string;
-  tags?: string;
-};
-
-type Config = {
-  delay: {
-    min: number;
-    max: number;
-  };
-};
+import { Config, Contact, Group } from "../types";
 
 export function getConfig() {
   try {

@@ -1,5 +1,5 @@
-import { group } from "console";
 import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
+import { Contact, Group } from "../types";
 import WhatsAppClient from "./client";
 import {
   delayRandom,
@@ -8,13 +8,6 @@ import {
   saveGroupContactsToExcel,
   saveGroupsToExcel,
 } from "./utils";
-
-type Contact = {
-  group_id?: string;
-  user_id: string;
-  name?: string;
-  number: string;
-};
 
 const client = WhatsAppClient.client;
 
@@ -36,7 +29,7 @@ export async function extractContacts(): Promise<void> {
 export async function extractGroups() {
   console.log("Extracting groups from WhatsApp...");
   const chats = await client.getChats();
-  const groups = [];
+  const groups: Group[] = [];
 
   for (const chat of chats) {
     if (chat.isGroup) {
@@ -56,12 +49,17 @@ export async function extractGroups() {
       //   );
       // }
 
+      const adminNumbers = (chat as any).groupMetadata.participants
+        .filter((p) => p.isAdmin || p.isSuperAdmin)
+        .map((p) => p.id._serialized.split("@")[0]);
+
       groups.push({
         name: chat.name,
         group_id: chat.id._serialized,
         total_members: (chat as any).groupMetadata.participants.length,
         // invite_link: inviteLink,
         admin_only: (chat as any).groupMetadata.announce ? "Yes" : "No",
+        admin_numbers: adminNumbers.join(", "),
       });
 
       // await delayRandom();
