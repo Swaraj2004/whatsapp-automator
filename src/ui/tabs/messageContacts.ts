@@ -10,7 +10,6 @@ import {
   QWidget,
 } from "@nodegui/nodegui";
 import fs from "fs";
-import path from "path";
 import { MessageMedia } from "whatsapp-web.js";
 import WhatsAppClient from "../../backend/client";
 import {
@@ -21,6 +20,7 @@ import {
   loadSentMessagesContacts,
   saveSentMessagesContacts,
 } from "../../backend/utils";
+import { createListItem } from "../components/listItem";
 import { createMultiSelectTags } from "../components/multiSelector";
 
 const client = WhatsAppClient.client;
@@ -171,7 +171,7 @@ export function createMessageContactsTab(): QWidget {
 
   const filesList = new QListWidget();
   filesList.setObjectName("filesList");
-  let attachedFiles: string[] = [];
+  let attachedFiles = new Map();
 
   addFileButton.addEventListener("clicked", () => {
     const fileDialog = new QFileDialog();
@@ -182,18 +182,23 @@ export function createMessageContactsTab(): QWidget {
 
     if (selectedFiles.length > 0) {
       for (const filePath of selectedFiles) {
-        const fileName = path.basename(filePath);
-        const item = new QListWidgetItem();
-        item.setText(fileName);
-        filesList.addItem(item);
-        attachedFiles.push(filePath);
+        const fileItemWidget = createListItem(
+          messageContactsTab,
+          filePath,
+          attachedFiles
+        );
+
+        // Add to list
+        const listItem = new QListWidgetItem();
+        filesList.addItem(listItem);
+        filesList.setItemWidget(listItem, fileItemWidget);
       }
     }
   });
 
   clearFilesButton.addEventListener("clicked", () => {
     filesList.clear();
-    attachedFiles = [];
+    attachedFiles.clear();
   });
 
   fileLayout.addWidget(filesLabel);
@@ -273,8 +278,8 @@ export function createMessageContactsTab(): QWidget {
           await delayRandom(logMessage, delay.min, delay.max);
         }
 
-        // Send media files if any
-        for (const filePath of attachedFiles) {
+        // Send media files with captions
+        for (const [filePath, caption] of attachedFiles.entries()) {
           if (stopSending) {
             break;
           }
@@ -284,7 +289,9 @@ export function createMessageContactsTab(): QWidget {
           }
 
           const media = MessageMedia.fromFilePath(filePath);
-          const sentMedia = await client.sendMessage(contact.user_id, media);
+          const sentMedia = await client.sendMessage(contact.user_id, media, {
+            caption,
+          });
           logMessage(
             `✅ (${i + 1}/${filteredContacts.length}) Media sent to ${
               contact.name ? contact.name + " " : ""
@@ -407,6 +414,12 @@ export function createMessageContactsTab(): QWidget {
       border: 1px solid #ccc;
       border-radius: 4px;
       min-height: 190px;
+    }
+    QListWidget::item {
+      border-bottom: 1px solid #ddd;
+      min-height: 25px;
+      padding: 5px;
+      margin: 5px;
     }
     #logsContainer {
       flex: 1;
