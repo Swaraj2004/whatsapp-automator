@@ -19,6 +19,9 @@ class WhatsAppClient extends EventEmitter {
       puppeteer: {
         executablePath: CHROME_PATH,
         headless: false,
+        args: process.env.PROXY_SERVER_ARG
+          ? [process.env.PROXY_SERVER_ARG]
+          : [],
       },
     });
     this.initialize();

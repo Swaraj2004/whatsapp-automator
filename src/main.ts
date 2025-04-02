@@ -5,6 +5,7 @@ import {
   QTabWidget,
   QWidget,
 } from "@nodegui/nodegui";
+import dotenv from "dotenv";
 import path from "path";
 import WhatsAppClient from "./backend/client";
 import { createContactsTab } from "./ui/tabs/contacts";
@@ -14,9 +15,16 @@ import { createMessageContactsTab } from "./ui/tabs/messageContacts";
 import { createMessageGroupsTab } from "./ui/tabs/messageGroups";
 import { createSettingsTab } from "./ui/tabs/settings";
 
+const envPath = path.resolve(__dirname, ".env");
+dotenv.config({ path: envPath });
+
 // Initialize QApplication
 const mainWindow = new QMainWindow();
-mainWindow.setWindowTitle("WhatsApp Bulk Messenger");
+mainWindow.setWindowTitle(
+  `WhatsApp Bulk Messenger ${
+    process.env.PHONE_NAME ? `(${process.env.PHONE_NAME})` : ""
+  }`
+);
 
 // Set application icon
 const iconPath = path.join(__dirname, "../assets/icon.ico");

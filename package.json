@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "WhatsApp Automator",
   "scripts": {
-    "build": "npm run build-code && npm run build-bundle",
+    "build": "npm run build-code && npm run build-bundle && copy .env dist\\.env",
     "build-code": "tsc",
     "build-bundle": "esbuild build/main.js --sourcemap --bundle --outfile=dist/main.cjs --platform=node --format=cjs --external:@nodegui/nodegui \"--external:nodegui-plugin-*\" --external:puppeteer --external:fluent-ffmpeg",
     "clean": "rimraf build dist distributable",
-    "package": "rimraf distributable && mkdir distributable && patch-package && xcopy /E /I /Y node_modules distributable\\node_modules && xcopy /E /I /Y dist distributable\\dist && xcopy /E /I /Y assets distributable\\assets && copy package.json distributable\\package.json && copy start.bat distributable\\start.bat && copy hide.vbs distributable\\hide.vbs && (cd distributable && npm install --omit=dev --ignore-scripts && rimraf node_modules\\puppeteer-core\\.local-chromium)",
+    "package": "rimraf distributable && mkdir distributable && patch-package && xcopy /E /I /Y node_modules distributable\\node_modules && xcopy /E /I /Y dist distributable\\dist && xcopy /E /I /Y assets distributable\\assets && copy package.json distributable\\package.json && copy start.bat distributable\\start.bat && copy hide.vbs distributable\\hide.vbs && copy .env distributable\\.env && (cd distributable && npm install --omit=dev --ignore-scripts && rimraf node_modules\\puppeteer-core\\.local-chromium)",
     "start": "qode dist/main.cjs",
     "postinstall": "patch-package"
   },
@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@nodegui/nodegui": "^0.61.0",
+    "dotenv": "^16.4.7",
     "source-map-support": "^0.5.21",
     "whatsapp-web.js": "^1.26.1-alpha.3",
     "xlsx": "^0.18.5"
