@@ -7,7 +7,7 @@
     "build-code": "tsc",
     "build-bundle": "esbuild build/main.js --sourcemap --bundle --outfile=dist/main.cjs --platform=node --format=cjs --external:@nodegui/nodegui \"--external:nodegui-plugin-*\" --external:puppeteer --external:fluent-ffmpeg",
     "clean": "rimraf build dist distributable",
-    "package": "rimraf distributable && mkdir distributable && patch-package && xcopy /E /I /Y node_modules distributable\\node_modules && xcopy /E /I /Y dist distributable\\dist && xcopy /E /I /Y assets distributable\\assets && copy package.json distributable\\package.json && copy start.bat distributable\\start.bat && copy hide.vbs distributable\\hide.vbs && copy .env distributable\\.env && (cd distributable && npm install --omit=dev --ignore-scripts && rimraf node_modules\\puppeteer-core\\.local-chromium)",
+    "package": "rimraf distributable && mkdir distributable && patch-package && xcopy /E /I /Y node_modules distributable\\node_modules && xcopy /E /I /Y dist distributable\\dist && xcopy /E /I /Y assets distributable\\assets && copy package.json distributable\\package.json && copy start.bat distributable\\start.bat && copy hide.vbs distributable\\hide.vbs && (cd distributable && npm install --omit=dev --ignore-scripts && rimraf node_modules\\puppeteer-core\\.local-chromium)",
     "start": "qode dist/main.cjs",
     "postinstall": "patch-package"
   },
