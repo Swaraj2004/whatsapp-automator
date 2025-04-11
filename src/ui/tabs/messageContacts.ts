@@ -50,6 +50,11 @@ export function createMessageContactsTab(): QWidget {
   const leftLayout = new FlexLayout();
   leftContainer.setLayout(leftLayout);
 
+  const rightContainer = new QWidget();
+  rightContainer.setObjectName("rightContainer");
+  const rightLayout = new FlexLayout();
+  rightContainer.setLayout(rightLayout);
+
   const contactsFileButton = new QPushButton();
   contactsFileButton.setText("Select Contacts File");
   contactsFileButton.setObjectName("contactsFileButton");
@@ -212,6 +217,32 @@ export function createMessageContactsTab(): QWidget {
   logsContainer.setObjectName("logsContainer");
   logsContainer.setReadOnly(true);
 
+  const logsTopContainer = new QWidget();
+  logsTopContainer.setObjectName("logsTopContainer");
+  const logsTopLayout = new FlexLayout();
+  logsTopContainer.setLayout(logsTopLayout);
+
+  const logsLabel = new QLabel();
+  logsLabel.setObjectName("logsLabel");
+  logsLabel.setText("Logs");
+
+  const logsActionsContainer = new QWidget();
+  logsActionsContainer.setObjectName("logsActionsContainer");
+  const logsActionsLayout = new FlexLayout();
+  logsActionsContainer.setLayout(logsActionsLayout);
+
+  const clearLogsButton = new QPushButton();
+  clearLogsButton.setText("Clear Logs");
+  clearLogsButton.setObjectName("clearLogsButton");
+  clearFilesButton.setCursor(CursorShape.PointingHandCursor);
+  clearLogsButton.addEventListener("clicked", () => {
+    logsContainer.clear();
+  });
+
+  logsTopLayout.addWidget(logsLabel);
+  logsTopLayout.addWidget(logsActionsContainer);
+  logsActionsLayout.addWidget(clearLogsButton);
+
   let stopSending = true;
   stopSendingButton.addEventListener("clicked", () => {
     if (!stopSending) logMessage("⛔️ Stopped sending messages!");
@@ -323,6 +354,7 @@ export function createMessageContactsTab(): QWidget {
       logMessage("❌ Error: No contacts file selected.");
       return;
     }
+    logMessage("⏳ Started sending messages...");
     stopSending = false;
     await sendMessagesFromExcel(contactsFilePath);
     if (!stopSending) logMessage("✅ Messages sent to all contacts!");
@@ -334,11 +366,13 @@ export function createMessageContactsTab(): QWidget {
   layout.addWidget(topContainer);
   layout.addWidget(bottomContainer);
   bottomLayout.addWidget(leftContainer);
-  bottomLayout.addWidget(logsContainer);
+  bottomLayout.addWidget(rightContainer);
   leftLayout.addWidget(messageLabel);
   leftLayout.addWidget(messageInput);
   leftLayout.addWidget(filesContainer);
   leftLayout.addWidget(filesList);
+  rightLayout.addWidget(logsTopContainer);
+  rightLayout.addWidget(logsContainer);
 
   // Apply Styles
   messageContactsTab.setStyleSheet(`
@@ -352,7 +386,7 @@ export function createMessageContactsTab(): QWidget {
       color: #333;
       margin-bottom: 5px;
     }
-    #messageLabel, #filesLabel {
+    #messageLabel, #filesLabel, #logsLabel {
       font-size: 16px;
       font-weight: bold;
       color: #333;
@@ -373,6 +407,24 @@ export function createMessageContactsTab(): QWidget {
     }
     QPushButton:hover {
       background-color: #2074d4;
+    }
+    #sendMessagesButton {
+      background-color: #49ad4e;
+    }
+    #sendMessagesButton:hover {
+      background-color: #40a145;
+    }
+    #stopSendingButton {
+      background-color: #e53935;
+    }
+    #stopSendingButton:hover {
+      background-color: #d32f2f;
+    }
+    #undoMessagesButton {
+      background-color: #f57c00;
+    }
+    #undoMessagesButton:hover {
+      background-color: #ef6c00;
     }
     #topContainer {
       flex-direction: row;
@@ -403,9 +455,13 @@ export function createMessageContactsTab(): QWidget {
     #addFileButton {
       min-width: 80px;
     }
-    #clearFilesButton {
+    #clearFilesButton, #clearLogsButton {
+      background-color: #e53935;
       margin-right: 0;
       min-width: 80px;
+    }
+    #clearFilesButton:hover, #clearLogsButton:hover {
+      background-color: #d32f2f;
     }
     #filesLabel {
       padding-top: 10px;
@@ -421,11 +477,20 @@ export function createMessageContactsTab(): QWidget {
       padding: 5px;
       margin: 5px;
     }
-    #logsContainer {
+    #rightContainer {
       flex: 1;
+      margin-right: 5px;
+      height: 555px;
+    }
+    #logsTopContainer {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    #logsContainer {
       border: 1px solid #ccc;
       border-radius: 4px;
       padding: 5px;
+      min-height: 493px;
     }
   `);
 
