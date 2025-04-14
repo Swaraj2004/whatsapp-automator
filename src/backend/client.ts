@@ -76,7 +76,11 @@ class WhatsAppClient extends EventEmitter {
       console.error("❌ Authentication failed:", msg);
     });
 
-    this.client.initialize();
+    try {
+      this.client.initialize();
+    } catch (error) {
+      console.error("❌ Error initializing client:", error);
+    }
   }
 }
 

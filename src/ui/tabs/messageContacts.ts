@@ -9,21 +9,17 @@ import {
   QTextEdit,
   QWidget,
 } from "@nodegui/nodegui";
-import fs from "fs";
-import { MessageMedia } from "whatsapp-web.js";
-import WhatsAppClient from "../../backend/client";
 import {
-  delayRandom,
-  getConfig,
-  getRandomInt,
-  loadContactsFromExcel,
-  loadSentMessagesContacts,
-  saveSentMessagesContacts,
-} from "../../backend/utils";
+  sendMessagesToContacts,
+  undoContactsMessages,
+} from "../../backend/controllers";
+import { loadContactsFromExcel } from "../../backend/utils";
+import {
+  cmSetLogger,
+  cmStopSending,
+} from "../../globals/contactsMessagingGolbals";
 import { createListItem } from "../components/listItem";
 import { createMultiSelectTags } from "../components/multiSelector";
-
-const client = WhatsAppClient.client;
 
 export function createMessageContactsTab(): QWidget {
   const messageContactsTab = new QWidget();
@@ -92,44 +88,7 @@ export function createMessageContactsTab(): QWidget {
   undoMessagesButton.setCursor(CursorShape.PointingHandCursor);
 
   undoMessagesButton.addEventListener("clicked", async () => {
-    let sentMessages = loadSentMessagesContacts();
-
-    if (sentMessages.length === 0) {
-      logMessage("❌ No messages to delete!");
-      return;
-    }
-
-    const { delay } = await getConfig();
-
-    for (const { chatId, msgId } of sentMessages) {
-      try {
-        const chat = await client.getChatById(chatId);
-        await delayRandom(logMessage, 2000, 5000);
-        const messages = await chat.fetchMessages({ limit: 50 });
-
-        const messageToDelete = messages.find(
-          (msg) => msg.id._serialized === msgId
-        );
-
-        if (messageToDelete) {
-          await messageToDelete.delete(true);
-          logMessage(`🗑️ Deleted message in ${chatId}`);
-        } else {
-          logMessage(
-            `⚠️ Message ${msgId} not found in ${chatId}, might be too old.`
-          );
-        }
-        await delayRandom(logMessage, delay.min, delay.max);
-      } catch (error) {
-        logMessage(
-          `❌ Failed to delete message in ${chatId}: ${error.message}`
-        );
-      }
-    }
-    logMessage("✅ Deleted all messages!");
-
-    sentMessages = [];
-    saveSentMessagesContacts(sentMessages);
+    await undoContactsMessages();
   });
 
   const tagsSelector = createMultiSelectTags(messageContactsTab);
@@ -211,6 +170,16 @@ export function createMessageContactsTab(): QWidget {
   filesActionsLayout.addWidget(addFileButton);
   filesActionsLayout.addWidget(clearFilesButton);
 
+  function logMessage(msg: string) {
+    logsContainer.append(msg + "\n");
+  }
+
+  function clearLogs() {
+    logsContainer.clear();
+  }
+
+  cmSetLogger(logMessage, clearLogs);
+
   // Logs Section
   const logsContainer = new QTextEdit();
   logsContainer.setPlaceholderText("Logs from function");
@@ -236,129 +205,25 @@ export function createMessageContactsTab(): QWidget {
   clearLogsButton.setObjectName("clearLogsButton");
   clearFilesButton.setCursor(CursorShape.PointingHandCursor);
   clearLogsButton.addEventListener("clicked", () => {
-    logsContainer.clear();
+    clearLogs();
   });
 
   logsTopLayout.addWidget(logsLabel);
   logsTopLayout.addWidget(logsActionsContainer);
   logsActionsLayout.addWidget(clearLogsButton);
 
-  let stopSending = true;
   stopSendingButton.addEventListener("clicked", () => {
-    if (!stopSending) logMessage("⛔️ Stopped sending messages!");
-    stopSending = true;
+    cmStopSending();
   });
 
-  function logMessage(msg: string) {
-    logsContainer.append(msg + "\n");
-  }
-
-  async function sendMessagesFromExcel(fileName: string) {
-    if (!fs.existsSync(fileName)) {
-      logMessage(`❌ '${fileName}' not found!`);
-      return;
-    }
-
-    const { contacts } = loadContactsFromExcel(fileName, logMessage);
-
-    // Get selected tags
-    const selectedTags = tagsSelector.getSelectedTags();
-    const sendToAll = selectedTags.includes("All");
-
-    // Filter contacts by selected tags
-    const filteredContacts = sendToAll
-      ? contacts
-      : contacts.filter((contact) => {
-          if (!contact.tags) return false;
-
-          const contactTags = contact.tags
-            .toString()
-            .split(",")
-            .map((tag) => tag.trim());
-          return selectedTags.some((tag) => contactTags.includes(tag));
-        });
-
-    const message = messageInput.toPlainText();
-
-    const sentMessages = [];
-    saveSentMessagesContacts(sentMessages);
-
-    const { delay } = await getConfig();
-
-    let sentCount = 0;
-    for (const [i, contact] of filteredContacts.entries()) {
-      if (stopSending) {
-        break;
-      }
-
-      try {
-        // Send text message
-        if (message) {
-          const sentMsg = await client.sendMessage(contact.user_id, message);
-          logMessage(
-            `✅ (${i + 1}/${filteredContacts.length}) Message sent to ${
-              contact.name ? contact.name + " " : ""
-            }(${contact.number})`
-          );
-
-          sentMessages.push({
-            chatId: contact.user_id,
-            msgId: sentMsg.id._serialized,
-          });
-          saveSentMessagesContacts(sentMessages);
-          await delayRandom(logMessage, delay.min, delay.max);
-        }
-
-        // Send media files with captions
-        for (const [filePath, caption] of attachedFiles.entries()) {
-          if (stopSending) {
-            break;
-          }
-          if (!fs.existsSync(filePath)) {
-            logMessage(`⚠️ File not found: ${filePath}`);
-            continue;
-          }
-
-          const media = MessageMedia.fromFilePath(filePath);
-          const sentMedia = await client.sendMessage(contact.user_id, media, {
-            caption,
-          });
-          logMessage(
-            `✅ (${i + 1}/${filteredContacts.length}) Media sent to ${
-              contact.name ? contact.name + " " : ""
-            }(${contact.number})`
-          );
-
-          sentMessages.push({
-            chatId: contact.user_id,
-            msgId: sentMedia.id._serialized,
-          });
-          saveSentMessagesContacts(sentMessages);
-          await delayRandom(logMessage, delay.min, delay.max);
-        }
-      } catch (error) {
-        logMessage(`❌ Error sending message: ${error.message}`);
-      }
-
-      sentCount++;
-      if (sentCount % getRandomInt(10, 20) === 0) {
-        logMessage("⏳ Taking a longer break to avoid detection...");
-        await delayRandom(logMessage, 20000, 30000);
-      }
-    }
-  }
-
   sendMessagesButton.addEventListener("clicked", async () => {
-    logsContainer.clear();
-    if (!contactsFilePath) {
-      logMessage("❌ Error: No contacts file selected.");
-      return;
-    }
-    logMessage("⏳ Started sending messages...");
-    stopSending = false;
-    await sendMessagesFromExcel(contactsFilePath);
-    if (!stopSending) logMessage("✅ Messages sent to all contacts!");
-    stopSending = true;
+    await sendMessagesToContacts({
+      message: messageInput.toPlainText(),
+      attachedFiles: attachedFiles,
+      selectedTags: tagsSelector.getSelectedTags(),
+      eventType: "uiDriven",
+      fileName: contactsFilePath,
+    });
   });
 
   // Adding Widgets to Layout

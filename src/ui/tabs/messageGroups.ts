@@ -9,21 +9,17 @@ import {
   QTextEdit,
   QWidget,
 } from "@nodegui/nodegui";
-import fs from "fs";
-import { MessageMedia } from "whatsapp-web.js";
-import WhatsAppClient from "../../backend/client";
 import {
-  delayRandom,
-  getConfig,
-  getRandomInt,
-  loadGroupsFromExcel,
-  loadSentMessagesGroups,
-  saveSentMessagesGroups,
-} from "../../backend/utils";
+  sendMessagesToGroups,
+  undoGroupsMessages,
+} from "../../backend/controllers";
+import { loadGroupsFromExcel } from "../../backend/utils";
+import {
+  gmSetLogger,
+  gmStopSending,
+} from "../../globals/groupsMessagingGlobals";
 import { createListItem } from "../components/listItem";
 import { createMultiSelectTags } from "../components/multiSelector";
-
-const client = WhatsAppClient.client;
 
 export function createMessageGroupsTab(): QWidget {
   const messageGroupsTab = new QWidget();
@@ -92,44 +88,7 @@ export function createMessageGroupsTab(): QWidget {
   undoMessagesButton.setCursor(CursorShape.PointingHandCursor);
 
   undoMessagesButton.addEventListener("clicked", async () => {
-    let sentMessages = loadSentMessagesGroups();
-
-    if (sentMessages.length === 0) {
-      logMessage("❌ No messages to delete!");
-      return;
-    }
-
-    const { delay } = await getConfig();
-
-    for (const { chatId, msgId } of sentMessages) {
-      try {
-        const chat = await client.getChatById(chatId);
-        await delayRandom(logMessage, 2000, 5000);
-        const messages = await chat.fetchMessages({ limit: 50 });
-
-        const messageToDelete = messages.find(
-          (msg) => msg.id._serialized === msgId
-        );
-
-        if (messageToDelete) {
-          await messageToDelete.delete(true);
-          logMessage(`🗑️ Deleted message in ${chatId}`);
-        } else {
-          logMessage(
-            `⚠️ Message ${msgId} not found in ${chatId}, might be too old.`
-          );
-        }
-        await delayRandom(logMessage, delay.min, delay.max);
-      } catch (error) {
-        logMessage(
-          `❌ Failed to delete message in ${chatId}: ${error.message}`
-        );
-      }
-    }
-    logMessage("✅ Deleted all messages!");
-
-    sentMessages = [];
-    saveSentMessagesGroups(sentMessages);
+    await undoGroupsMessages();
   });
 
   const tagsSelector = createMultiSelectTags(messageGroupsTab);
@@ -208,6 +167,16 @@ export function createMessageGroupsTab(): QWidget {
   filesActionsLayout.addWidget(addFileButton);
   filesActionsLayout.addWidget(clearFilesButton);
 
+  function logMessage(msg: string) {
+    logsContainer.append(msg + "\n");
+  }
+
+  function clearLogs() {
+    logsContainer.clear();
+  }
+
+  gmSetLogger(logMessage, clearLogs);
+
   const logsContainer = new QTextEdit();
   logsContainer.setPlaceholderText("Logs from function");
   logsContainer.setObjectName("logsContainer");
@@ -232,130 +201,25 @@ export function createMessageGroupsTab(): QWidget {
   clearLogsButton.setObjectName("clearLogsButton");
   clearFilesButton.setCursor(CursorShape.PointingHandCursor);
   clearLogsButton.addEventListener("clicked", () => {
-    logsContainer.clear();
+    clearLogs();
   });
 
   logsTopLayout.addWidget(logsLabel);
   logsTopLayout.addWidget(logsActionsContainer);
   logsActionsLayout.addWidget(clearLogsButton);
 
-  let stopSending = true;
   stopSendingButton.addEventListener("clicked", () => {
-    if (!stopSending) logMessage("⛔️ Stopped sending messages!");
-    stopSending = true;
+    gmStopSending();
   });
 
-  function logMessage(msg: string) {
-    logsContainer.append(msg + "\n");
-  }
-
-  async function sendMessagesFromExcel(fileName: string) {
-    if (!fs.existsSync(fileName)) {
-      logMessage(`❌ '${fileName}' not found!`);
-      return;
-    }
-
-    const { groups } = loadGroupsFromExcel(fileName, logMessage);
-
-    const selectedTags = tagsSelector.getSelectedTags();
-    const sendToAll = selectedTags.includes("All");
-
-    const filteredGroups = sendToAll
-      ? groups
-      : groups.filter((group) => {
-          if (!group.tags) return false;
-
-          const groupTags = group.tags
-            .toString()
-            .split(",")
-            .map((tag) => tag.trim());
-          return selectedTags.some((tag) => groupTags.includes(tag));
-        });
-
-    const message = messageInput.toPlainText();
-
-    const sentMessages = [];
-    saveSentMessagesGroups(sentMessages);
-
-    const { delay } = await getConfig();
-
-    let sentCount = 0;
-    for (const [i, group] of filteredGroups.entries()) {
-      if (stopSending) {
-        break;
-      }
-
-      if (group.hasOwnProperty("admin_only") && group.admin_only === "Yes") {
-        logMessage(`⚠️ Skipping non-admin group: ${group.name}`);
-        continue;
-      }
-
-      try {
-        if (message) {
-          const sentMsg = await client.sendMessage(group.group_id, message);
-          logMessage(
-            `✅ (${i + 1}/${filteredGroups.length}) Message sent to ${
-              group.name ? group.name : "Unknown Group"
-            }`
-          );
-
-          sentMessages.push({
-            chatId: group.group_id,
-            msgId: sentMsg.id._serialized,
-          });
-          saveSentMessagesGroups(sentMessages);
-          await delayRandom(logMessage, delay.min, delay.max);
-        }
-
-        for (const [filePath, caption] of attachedFiles.entries()) {
-          if (stopSending) {
-            break;
-          }
-          if (!fs.existsSync(filePath)) {
-            logMessage(`⚠️ File not found: ${filePath}`);
-            continue;
-          }
-
-          const media = MessageMedia.fromFilePath(filePath);
-          const sentMedia = await client.sendMessage(group.group_id, media, {
-            caption,
-          });
-          logMessage(
-            `✅ (${i + 1}/${filteredGroups.length}) Media sent to ${
-              group.name ? group.name : "Unknown Group"
-            }`
-          );
-
-          sentMessages.push({
-            chatId: group.group_id,
-            msgId: sentMedia.id._serialized,
-          });
-          saveSentMessagesGroups(sentMessages);
-          await delayRandom(logMessage, delay.min, delay.max);
-        }
-      } catch (error) {
-        logMessage(`❌ Error sending message: ${error.message}`);
-      }
-
-      sentCount++;
-      if (sentCount % getRandomInt(10, 20) === 0) {
-        logMessage("⏳ Taking a longer break to avoid detection...");
-        await delayRandom(logMessage, 20000, 30000);
-      }
-    }
-  }
-
   sendMessagesButton.addEventListener("clicked", async () => {
-    logsContainer.clear();
-    if (!groupsFilePath) {
-      logMessage("❌ Error: No groups file selected.");
-      return;
-    }
-    logMessage("⏳ Started sending messages...");
-    stopSending = false;
-    await sendMessagesFromExcel(groupsFilePath);
-    if (!stopSending) logMessage("✅ Messages sent to all groups!");
-    stopSending = true;
+    await sendMessagesToGroups({
+      message: messageInput.toPlainText(),
+      attachedFiles: attachedFiles,
+      selectedTags: tagsSelector.getSelectedTags(),
+      eventType: "uiDriven",
+      fileName: groupsFilePath,
+    });
   });
 
   layout.addWidget(headerLabel);
