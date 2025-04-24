@@ -416,6 +416,11 @@ export async function sendMessagesToGroups({
       continue;
     }
 
+    if (group.group_id.includes("@broadcast")) {
+      log(`⚠️ Skipping broadcast group: ${group.name}`);
+      continue;
+    }
+
     try {
       if (message) {
         const sentMsg = await client.sendMessage(group.group_id, message);

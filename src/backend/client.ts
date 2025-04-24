@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import fs from "fs";
+import qrcode from "qrcode-terminal";
 import { Client, LocalAuth } from "whatsapp-web.js";
 import { CHROME_PATHS, SESSION_PATH } from "../consts";
 
@@ -18,7 +19,10 @@ class WhatsAppClient extends EventEmitter {
       authStrategy: new LocalAuth({ dataPath: SESSION_PATH }),
       puppeteer: {
         executablePath: CHROME_PATH,
-        headless: false,
+        headless:
+          process.env.HEADLESS_MODE && process.env.HEADLESS_MODE === "true"
+            ? true
+            : false,
         args: process.env.PROXY_SERVER_ARG
           ? [
               process.env.PROXY_SERVER_ARG,
@@ -63,6 +67,11 @@ class WhatsAppClient extends EventEmitter {
   }
 
   private initialize(): void {
+    this.client.on("qr", (qr: string) => {
+      console.log("📱 Scan the QR code below to authenticate:");
+      qrcode.generate(qr, { small: true });
+    });
+
     this.client.on("ready", () => {
       console.log("✅ Client is ready!");
       this.emit("ready");
