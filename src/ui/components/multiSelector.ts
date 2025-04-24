@@ -7,6 +7,7 @@ import {
   QPushButton,
   QScrollArea,
   QWidget,
+  ScrollBarPolicy,
 } from "@nodegui/nodegui";
 
 export function createMultiSelectTags(parentWidget) {
@@ -36,7 +37,8 @@ export function createMultiSelectTags(parentWidget) {
     const dialog = new QDialog(parentWidget);
     dialog.setWindowTitle("Select Tags");
     dialog.setObjectName("tagsDialog");
-    dialog.setMinimumSize(300, 360);
+    dialog.setMinimumSize(350, 340);
+    dialog.setMaximumSize(350, 340);
 
     const dialogLayout = new FlexLayout();
     dialog.setLayout(dialogLayout);
@@ -46,8 +48,17 @@ export function createMultiSelectTags(parentWidget) {
     scrollArea.setObjectName("tagsScrollArea");
     scrollArea.setWidgetResizable(true);
 
+    // Explicitly set vertical scrollbar always on
+    scrollArea.setVerticalScrollBarPolicy(ScrollBarPolicy.ScrollBarAlwaysOn);
+
+    // Fixed height to ensure scrolling is needed
+    scrollArea.setMinimumSize(310, 250);
+    scrollArea.setMaximumSize(310, 250);
+
     const scrollWidget = new QWidget();
     scrollWidget.setObjectName("tagsScrollWidget");
+
+    // Use FlexLayout for scroll content
     const scrollLayout = new FlexLayout();
     scrollWidget.setLayout(scrollLayout);
 
@@ -78,7 +89,7 @@ export function createMultiSelectTags(parentWidget) {
 
     // Create other tag checkboxes
     availableTags.forEach((tag) => {
-      if (tag === "All") return; // Skip "All" as we already added it
+      if (tag === "All") return;
 
       const checkbox = new QCheckBox();
       checkbox.setText(tag);
@@ -105,6 +116,13 @@ export function createMultiSelectTags(parentWidget) {
       scrollLayout.addWidget(checkbox);
       checkboxes.push(checkbox);
     });
+
+    // Force the scroll content widget to have enough minimum height
+    // This ensures scrolling is activated when there are many items
+    if (availableTags.length > 10) {
+      const contentHeight = availableTags.length * 25;
+      scrollWidget.setMinimumSize(280, contentHeight);
+    }
 
     // Buttons container
     const buttonsContainer = new QWidget();
@@ -142,7 +160,10 @@ export function createMultiSelectTags(parentWidget) {
     buttonsLayout.addWidget(okButton);
     buttonsLayout.addWidget(cancelButton);
 
+    // Set the scroll widget to the scroll area - order matters
     scrollArea.setWidget(scrollWidget);
+
+    // Add widgets to dialog layout
     dialogLayout.addWidget(scrollArea);
     dialogLayout.addWidget(buttonsContainer);
 
@@ -151,8 +172,8 @@ export function createMultiSelectTags(parentWidget) {
         background-color: white;
       }
       #tagsScrollArea {
-        min-width: 280px;
-        min-height: 300px;
+        min-width: 310px;
+        min-height: 250px;
         border: 1px solid #ccc;
         border-radius: 4px;
         margin: 10px;
@@ -163,7 +184,7 @@ export function createMultiSelectTags(parentWidget) {
       }
       QCheckBox {
         padding-bottom: 5px;
-        width: 290px;
+        width: 300px;
       }
       #dialogButtonsContainer {
         flex-direction: row;
