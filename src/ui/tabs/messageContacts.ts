@@ -9,6 +9,7 @@ import {
   QTextEdit,
   QWidget,
 } from "@nodegui/nodegui";
+import fs from "fs";
 import {
   sendMessagesToContacts,
   undoContactsMessages,
@@ -146,16 +147,25 @@ export function createMessageContactsTab(): QWidget {
 
     if (selectedFiles.length > 0) {
       for (const filePath of selectedFiles) {
-        const fileItemWidget = createListItem(
-          messageContactsTab,
-          filePath,
-          attachedFiles
-        );
+        const stats = fs.statSync(filePath);
+        const fileSize = stats.size; // size in bytes
 
-        // Add to list
-        const listItem = new QListWidgetItem();
-        filesList.addItem(listItem);
-        filesList.setItemWidget(listItem, fileItemWidget);
+        if (fileSize <= 10 * 1024 * 1024) {
+          // 10 MB limit
+          const fileItemWidget = createListItem(
+            messageContactsTab,
+            filePath,
+            attachedFiles
+          );
+
+          const listItem = new QListWidgetItem();
+          filesList.addItem(listItem);
+          filesList.setItemWidget(listItem, fileItemWidget);
+        } else {
+          logMessage(
+            `File "${filePath}" exceeds 10 MB limit and was not added.`
+          );
+        }
       }
     }
   });
@@ -170,6 +180,12 @@ export function createMessageContactsTab(): QWidget {
   filesActionsLayout.addWidget(addFileButton);
   filesActionsLayout.addWidget(clearFilesButton);
 
+  // Logs Section
+  const logsContainer = new QTextEdit();
+  logsContainer.setPlaceholderText("Logs from function");
+  logsContainer.setObjectName("logsContainer");
+  logsContainer.setReadOnly(true);
+
   function logMessage(msg: string) {
     logsContainer.append(msg + "\n");
   }
@@ -179,12 +195,6 @@ export function createMessageContactsTab(): QWidget {
   }
 
   cmSetLogger(logMessage, clearLogs);
-
-  // Logs Section
-  const logsContainer = new QTextEdit();
-  logsContainer.setPlaceholderText("Logs from function");
-  logsContainer.setObjectName("logsContainer");
-  logsContainer.setReadOnly(true);
 
   const logsTopContainer = new QWidget();
   logsTopContainer.setObjectName("logsTopContainer");

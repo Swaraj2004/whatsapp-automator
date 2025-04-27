@@ -9,6 +9,7 @@ import {
   QTextEdit,
   QWidget,
 } from "@nodegui/nodegui";
+import fs from "fs";
 import {
   sendMessagesToGroups,
   undoGroupsMessages,
@@ -144,15 +145,24 @@ export function createMessageGroupsTab(): QWidget {
 
     if (selectedFiles.length > 0) {
       for (const filePath of selectedFiles) {
-        const fileItemWidget = createListItem(
-          messageGroupsTab,
-          filePath,
-          attachedFiles
-        );
+        const stats = fs.statSync(filePath);
+        const fileSize = stats.size;
 
-        const listItem = new QListWidgetItem();
-        filesList.addItem(listItem);
-        filesList.setItemWidget(listItem, fileItemWidget);
+        if (fileSize <= 10 * 1024 * 1024) {
+          const fileItemWidget = createListItem(
+            messageGroupsTab,
+            filePath,
+            attachedFiles
+          );
+
+          const listItem = new QListWidgetItem();
+          filesList.addItem(listItem);
+          filesList.setItemWidget(listItem, fileItemWidget);
+        } else {
+          logMessage(
+            `File "${filePath}" exceeds 10 MB limit and was not added.`
+          );
+        }
       }
     }
   });
@@ -167,6 +177,11 @@ export function createMessageGroupsTab(): QWidget {
   filesActionsLayout.addWidget(addFileButton);
   filesActionsLayout.addWidget(clearFilesButton);
 
+  const logsContainer = new QTextEdit();
+  logsContainer.setPlaceholderText("Logs from function");
+  logsContainer.setObjectName("logsContainer");
+  logsContainer.setReadOnly(true);
+
   function logMessage(msg: string) {
     logsContainer.append(msg + "\n");
   }
@@ -176,11 +191,6 @@ export function createMessageGroupsTab(): QWidget {
   }
 
   gmSetLogger(logMessage, clearLogs);
-
-  const logsContainer = new QTextEdit();
-  logsContainer.setPlaceholderText("Logs from function");
-  logsContainer.setObjectName("logsContainer");
-  logsContainer.setReadOnly(true);
 
   const logsTopContainer = new QWidget();
   logsTopContainer.setObjectName("logsTopContainer");
