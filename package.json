@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "WhatsApp Automator",
   "scripts": {
-    "build": "npm run build-code && npm run build-bundle && copy .env dist\\.env",
+    "build": "npm run build-code && npm run build-bundle && copy .env dist\\.env && copy .env.pass dist\\.env.pass",
     "build-code": "tsc",
     "build-bundle": "esbuild build/main.js --sourcemap --bundle --outfile=dist/main.cjs --platform=node --format=cjs --external:@nodegui/nodegui \"--external:nodegui-plugin-*\" --external:puppeteer --external:fluent-ffmpeg",
     "clean": "rimraf build dist distributable",
@@ -16,7 +16,6 @@
     "url": "git+https://github.com/Swaraj2004/whatsapp-automator.git"
   },
   "author": "Swaraj Chavan",
-  "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.3.1",
     "esbuild": "^0.18.4",

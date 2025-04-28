@@ -5,3 +5,4 @@ distributable/
 data/
 .wwebjs_cache/
 .env
+.env.pass
