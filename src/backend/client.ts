@@ -1,8 +1,11 @@
+import dotenv from "dotenv";
 import { EventEmitter } from "events";
 import fs from "fs";
 import qrcode from "qrcode-terminal";
 import { Client, LocalAuth } from "whatsapp-web.js";
 import { CHROME_PATHS, SESSION_PATH } from "../consts";
+
+dotenv.config();
 
 const CHROME_PATH = CHROME_PATHS.find((path) => fs.existsSync(path)) || "";
 
@@ -75,10 +78,6 @@ class WhatsAppClient extends EventEmitter {
     this.client.on("ready", () => {
       console.log("✅ Client is ready!");
       this.emit("ready");
-    });
-
-    this.client.on("authenticated", () => {
-      console.log("🔑 Authenticated successfully!");
     });
 
     this.client.on("auth_failure", (msg: string) => {
