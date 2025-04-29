@@ -88,7 +88,6 @@ export function loadContactsFromExcel(
 
     // Extract all unique tags from the contacts
     const uniqueTags = new Set<string>();
-    uniqueTags.add("All"); // Always include "All" option
 
     for (const contact of contacts) {
       if (contact.tags) {
@@ -143,7 +142,6 @@ export function loadGroupsFromExcel(
 
     // Extract all unique tags from the contacts
     const uniqueTags = new Set<string>();
-    uniqueTags.add("All"); // Always include "All" option
 
     for (const group of groups) {
       if (group.tags) {

@@ -18,7 +18,12 @@ class WhatsAppClient extends EventEmitter {
 
   constructor() {
     super();
-    this.client = new Client({
+    this.client = this.createClient();
+    this.initialize();
+  }
+
+  private createClient(): Client {
+    return new Client({
       authStrategy: new LocalAuth({ dataPath: SESSION_PATH }),
       puppeteer: {
         executablePath: CHROME_PATH,
@@ -66,7 +71,6 @@ class WhatsAppClient extends EventEmitter {
             ],
       },
     });
-    this.initialize();
   }
 
   private initialize(): void {
@@ -82,6 +86,10 @@ class WhatsAppClient extends EventEmitter {
 
     this.client.on("auth_failure", (msg: string) => {
       console.error("❌ Authentication failed:", msg);
+    });
+
+    this.client.on("disconnected", (reason) => {
+      console.warn("⚠️ Client was disconnected:", reason);
     });
 
     try {

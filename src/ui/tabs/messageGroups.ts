@@ -160,7 +160,7 @@ export function createMessageGroupsTab(): QWidget {
           filesList.setItemWidget(listItem, fileItemWidget);
         } else {
           logMessage(
-            `File "${filePath}" exceeds 10 MB limit and was not added.`
+            `❌ File "${filePath}" exceeds 10 MB limit and was not added.`
           );
         }
       }

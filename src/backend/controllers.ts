@@ -276,9 +276,9 @@ export async function sendMessagesToContacts({
           caption,
         });
         log(
-          `✅ (${i + 1}/${filteredContacts.length}) Sent media to ${
-            contact.name ?? ""
-          } (${contact.number})`
+          `✅ (${i + 1}/${filteredContacts.length}) Sent media (${filePath
+            .split("/")
+            .pop()}) to ${contact.name ?? ""} (${contact.number})`
         );
         sentMessages.push({
           chatId: contact.user_id,
@@ -454,9 +454,9 @@ export async function sendMessagesToGroups({
           caption,
         });
         log(
-          `✅ (${i + 1}/${filteredGroups.length}) Sent media to ${
-            group.name ?? "Unknown Group"
-          }`
+          `✅ (${i + 1}/${filteredGroups.length}) Sent media (${filePath
+            .split("/")
+            .pop()}) to ${group.name ?? "Unknown Group"}`
         );
 
         sentMessages.push({
