@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 
-REM Set default value to false (terminal mode)
+REM Set default value to false
 set HEADLESS_MODE=false
 
 REM Check if .env file exists
@@ -14,6 +14,11 @@ if exist "dist\.env" (
 
 REM Remove quotes from the value
 set HEADLESS_MODE=%HEADLESS_MODE:"=%
+
+REM Check if HEADLESS_MODE is empty
+if "%HEADLESS_MODE%"=="" (
+    set "HEADLESS_MODE=false"
+)
 
 REM Check if HEADLESS_MODE is true or false
 if "%HEADLESS_MODE%"=="false" (
