@@ -3,6 +3,7 @@ import * as path from "path";
 export const DATA_FOLDER = "data";
 export const BASE_DIR = path.join(process.cwd(), DATA_FOLDER);
 export const SESSION_PATH = path.join(BASE_DIR, "session");
+export const FILES_SAVE_DIR = path.join(BASE_DIR, "received_files");
 
 export const SENT_MESSAGES_CONTACTS_FILE = path.join(
   BASE_DIR,

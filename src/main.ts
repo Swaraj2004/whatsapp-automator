@@ -8,6 +8,7 @@ import {
 import dotenv from "dotenv";
 import path from "path";
 import WhatsAppClient from "./backend/client";
+import { initWebSocket } from "./backend/wsClient";
 import { createContactsTab } from "./ui/tabs/contacts";
 import { createGroupContactsTab } from "./ui/tabs/groupContacts";
 import { createGroupsTab } from "./ui/tabs/groups";
@@ -52,7 +53,7 @@ function waitForWhatsAppClient() {
   return new Promise<void>((resolve, reject) => {
     WhatsAppClient.on("ready", () => {
       console.log("✅ WhatsApp Client is ready!");
-      resolve(); // Resolve when WhatsAppClient is ready
+      resolve();
     });
 
     // If for some reason "ready" event is not fired within a reasonable time, reject
@@ -60,7 +61,7 @@ function waitForWhatsAppClient() {
       reject(
         new Error("❌ WhatsApp Client did not become ready within timeout")
       );
-    }, 60000); // Timeout after 60 seconds
+    }, 60000);
   });
 }
 
@@ -120,6 +121,8 @@ async function startApp() {
   mainWindow.setCentralWidget(centralWidget);
   mainWindow.resize(1280, 720);
   mainWindow.show();
+
+  initWebSocket(); // Initialize WebSocket connection
 }
 
 startApp().catch((error) => {
