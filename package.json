@@ -30,6 +30,7 @@
     "qrcode-terminal": "^0.12.0",
     "source-map-support": "^0.5.21",
     "whatsapp-web.js": "^1.26.1-alpha.3",
+    "ws": "^8.18.1",
     "xlsx": "^0.18.5"
   }
 }

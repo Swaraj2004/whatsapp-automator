@@ -21,7 +21,7 @@ if (fs.existsSync(FILES_SAVE_DIR)) {
   fs.mkdirSync(FILES_SAVE_DIR);
 }
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const PHONE_NAME = process.env.PHONE_NAME;
 const WS_URL = process.env.WS_URL || "ws://localhost:3000/ws";
@@ -36,6 +36,8 @@ export function initWebSocket() {
       console.log("✅ WS connected");
       const { tags: contactTags } = loadContactsFromExcel();
       const { tags: groupTags } = loadGroupsFromExcel();
+
+      console.log(PHONE_NAME, WS_URL);
       ws.send(
         JSON.stringify({
           type: "register",
