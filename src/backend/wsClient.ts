@@ -112,8 +112,8 @@ export function initWebSocket() {
     });
 
     ws.on("close", () => {
-      console.log("🔌 WS disconnected, retrying in 5s...");
-      setTimeout(connect, 5000);
+      console.log("🔌 WS disconnected, retrying in 10s...");
+      setTimeout(connect, 10000);
     });
 
     ws.on("error", (err) => {

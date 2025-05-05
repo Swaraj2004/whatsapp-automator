@@ -8,7 +8,7 @@ import {
 } from "../globals/contactsMessagingGolbals";
 import { MessageMedia } from "whatsapp-web.js";
 import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
-import { Contact, Group } from "../types";
+import { Contact, ContactMessageLog, Group } from "../types";
 import WhatsAppClient from "./client";
 import {
   delayRandom,
@@ -18,6 +18,7 @@ import {
   loadGroupsFromExcel,
   loadSentMessagesContacts,
   loadSentMessagesGroups,
+  saveContactsMessagesLogs,
   saveContactsToExcel,
   saveGroupContactsToExcel,
   saveGroupsToExcel,
@@ -35,7 +36,6 @@ import {
 const client = WhatsAppClient.client;
 
 export async function extractContacts(): Promise<void> {
-  console.log("Extracting contacts from WhatsApp...");
   const chats = await client.getChats();
   const contacts: Contact[] = chats
     .filter((chat) => !chat.isGroup)
@@ -50,7 +50,6 @@ export async function extractContacts(): Promise<void> {
 }
 
 export async function extractGroups() {
-  console.log("Extracting groups from WhatsApp...");
   const chats = await client.getChats();
   const groups: Group[] = [];
 
@@ -252,6 +251,14 @@ export async function sendMessagesToContacts({
             contact.name ?? ""
           } (${contact.number})`
         );
+        WhatsAppClient.trackMessageLog(sentMsg.id._serialized, {
+          name: contact.name ?? "",
+          number: contact.number,
+          chat_id: contact.user_id,
+          message_id: sentMsg.id._serialized,
+          ack: 0, // Initially 0, will be updated via 'message_ack'
+          timestamp: new Date().toISOString(),
+        });
         sentMessages.push({
           chatId: contact.user_id,
           msgId: sentMsg.id._serialized,
@@ -280,6 +287,14 @@ export async function sendMessagesToContacts({
             .split("/")
             .pop()}) to ${contact.name ?? ""} (${contact.number})`
         );
+        WhatsAppClient.trackMessageLog(sentMedia.id._serialized, {
+          name: contact.name ?? "",
+          number: contact.number,
+          chat_id: contact.user_id,
+          message_id: sentMedia.id._serialized,
+          ack: 0,
+          timestamp: new Date().toISOString(),
+        });
         sentMessages.push({
           chatId: contact.user_id,
           msgId: sentMedia.id._serialized,

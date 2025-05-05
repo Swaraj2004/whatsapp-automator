@@ -23,3 +23,12 @@ export type Config = {
     max: number;
   };
 };
+
+export type ContactMessageLog = {
+  name: string;
+  number: string;
+  chat_id: string;
+  message_id: string;
+  ack: number;
+  timestamp: string;
+};

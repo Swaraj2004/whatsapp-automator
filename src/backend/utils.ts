@@ -7,8 +7,9 @@ import {
   GROUPS_FILE,
   SENT_MESSAGES_CONTACTS_FILE,
   SENT_MESSAGES_GROUPS_FILE,
+  CONTACTS_MESSAGES_LOG_FILE,
 } from "../consts";
-import { Config, Contact, Group } from "../types";
+import { Config, Contact, Group, ContactMessageLog } from "../types";
 
 export function getConfig() {
   try {
@@ -225,4 +226,43 @@ export function saveSentMessagesGroups(messages) {
     SENT_MESSAGES_GROUPS_FILE,
     JSON.stringify(messages, null, 2)
   );
+}
+
+export function saveContactsMessagesLogs(entry: ContactMessageLog) {
+  let workbook: XLSX.WorkBook;
+  let data: ContactMessageLog[] = [];
+
+  const TEN_DAYS_AGO = Date.now() - 10 * 24 * 60 * 60 * 1000;
+  const sheetName = "AckLog";
+
+  if (fs.existsSync(CONTACTS_MESSAGES_LOG_FILE)) {
+    workbook = XLSX.readFile(CONTACTS_MESSAGES_LOG_FILE);
+    const worksheet = workbook.Sheets[sheetName];
+    if (worksheet) {
+      data = XLSX.utils.sheet_to_json<ContactMessageLog>(worksheet);
+      data = data.filter((log) => {
+        const time = new Date(log.timestamp ?? "").getTime();
+        return !isNaN(time) && time >= TEN_DAYS_AGO;
+      });
+    }
+
+    delete workbook.Sheets[sheetName];
+    const index = workbook.SheetNames.indexOf(sheetName);
+    if (index !== -1) workbook.SheetNames.splice(index, 1);
+  } else {
+    workbook = XLSX.utils.book_new();
+  }
+
+  const existingIndex = data.findIndex(
+    (d) => d.message_id === entry.message_id
+  );
+  if (existingIndex !== -1) {
+    data[existingIndex] = entry;
+  } else {
+    data.push(entry);
+  }
+
+  const newWorksheet = XLSX.utils.json_to_sheet(data);
+  XLSX.utils.book_append_sheet(workbook, newWorksheet, sheetName);
+  XLSX.writeFile(workbook, CONTACTS_MESSAGES_LOG_FILE);
 }

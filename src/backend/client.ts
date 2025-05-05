@@ -2,8 +2,10 @@ import dotenv from "dotenv";
 import { EventEmitter } from "events";
 import fs from "fs";
 import qrcode from "qrcode-terminal";
+import { ContactMessageLog } from "src/types";
 import { Client, LocalAuth } from "whatsapp-web.js";
 import { CHROME_PATHS, SESSION_PATH } from "../consts";
+import { saveContactsMessagesLogs } from "./utils";
 
 dotenv.config();
 
@@ -12,6 +14,27 @@ const CHROME_PATH = CHROME_PATHS.find((path) => fs.existsSync(path)) || "";
 if (!CHROME_PATH) {
   console.error("❌ Chrome executable not found!");
 }
+
+const pendingLogs: Record<string, ContactMessageLog> = {};
+
+const args = [
+  "--disable-gpu",
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-extensions",
+  "--disable-background-networking",
+  "--disable-sync",
+  "--disable-default-apps",
+  "--disable-translate",
+  "--disable-popup-blocking",
+  "--disable-infobars",
+  "--disable-background-timer-throttling",
+  "--disable-renderer-backgrounding",
+  "--disable-backgrounding-occluded-windows",
+  "--js-flags=--max-old-space-size=512",
+  "--window-size=1000,700",
+];
 
 class WhatsAppClient extends EventEmitter {
   client: Client;
@@ -32,43 +55,8 @@ class WhatsAppClient extends EventEmitter {
             ? true
             : false,
         args: process.env.PROXY_SERVER_ARG
-          ? [
-              process.env.PROXY_SERVER_ARG,
-              "--disable-gpu",
-              "--no-sandbox",
-              "--disable-setuid-sandbox",
-              "--disable-dev-shm-usage",
-              "--disable-extensions",
-              "--disable-background-networking",
-              "--disable-sync",
-              "--disable-default-apps",
-              "--disable-translate",
-              "--disable-popup-blocking",
-              "--disable-infobars",
-              "--disable-background-timer-throttling",
-              "--disable-renderer-backgrounding",
-              "--disable-backgrounding-occluded-windows",
-              "--js-flags=--max-old-space-size=512",
-              "--window-size=1000,700",
-            ]
-          : [
-              "--disable-gpu",
-              "--no-sandbox",
-              "--disable-setuid-sandbox",
-              "--disable-dev-shm-usage",
-              "--disable-extensions",
-              "--disable-background-networking",
-              "--disable-sync",
-              "--disable-default-apps",
-              "--disable-translate",
-              "--disable-popup-blocking",
-              "--disable-infobars",
-              "--disable-background-timer-throttling",
-              "--disable-renderer-backgrounding",
-              "--disable-backgrounding-occluded-windows",
-              "--js-flags=--max-old-space-size=512",
-              "--window-size=1000,700",
-            ],
+          ? [process.env.PROXY_SERVER_ARG, ...args]
+          : args,
       },
     });
   }
@@ -92,11 +80,30 @@ class WhatsAppClient extends EventEmitter {
       console.warn("⚠️ Client was disconnected:", reason);
     });
 
+    this.client.on("message_ack", ({ id, ack }) => {
+      const idStr = id._serialized;
+
+      const log = pendingLogs[idStr];
+      if (!log) return;
+
+      if (ack > log.ack) {
+        log.ack = ack;
+        saveContactsMessagesLogs(log);
+        if (ack >= 2) {
+          delete pendingLogs[idStr];
+        }
+      }
+    });
+
     try {
       this.client.initialize();
     } catch (error) {
       console.error("❌ Error initializing client:", error);
     }
+  }
+
+  trackMessageLog(messageId: string, log: ContactMessageLog): void {
+    pendingLogs[messageId] = log;
   }
 }
 
