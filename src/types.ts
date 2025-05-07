@@ -24,11 +24,11 @@ export type Config = {
   };
 };
 
-export type ContactMessageLog = {
+export type MessageLog = {
   name: string;
-  number: string;
   chat_id: string;
   message_id: string;
   ack: number;
   timestamp: string;
+  is_group: boolean;
 };

@@ -1,5 +1,5 @@
 diff --git a/node_modules/whatsapp-web.js/index.d.ts b/node_modules/whatsapp-web.js/index.d.ts
-index bd75dbf..28e6c54 100644
+index 22aea7e..b59937b 100644
 --- a/node_modules/whatsapp-web.js/index.d.ts
 +++ b/node_modules/whatsapp-web.js/index.d.ts
 @@ -124,7 +124,7 @@ declare namespace WAWebJS {

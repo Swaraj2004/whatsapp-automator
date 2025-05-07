@@ -2,10 +2,10 @@ import dotenv from "dotenv";
 import { EventEmitter } from "events";
 import fs from "fs";
 import qrcode from "qrcode-terminal";
-import { ContactMessageLog } from "src/types";
+import { MessageLog } from "src/types";
 import { Client, LocalAuth } from "whatsapp-web.js";
 import { CHROME_PATHS, SESSION_PATH } from "../consts";
-import { saveContactsMessagesLogs } from "./utils";
+import { saveContactsMessagesLogs, saveGroupsMessagesLogs } from "./utils";
 
 dotenv.config();
 
@@ -15,7 +15,7 @@ if (!CHROME_PATH) {
   console.error("❌ Chrome executable not found!");
 }
 
-const pendingLogs: Record<string, ContactMessageLog> = {};
+const pendingLogs: Record<string, MessageLog> = {};
 
 const args = [
   "--disable-gpu",
@@ -88,7 +88,11 @@ class WhatsAppClient extends EventEmitter {
 
       if (ack > log.ack) {
         log.ack = ack;
-        saveContactsMessagesLogs(log);
+        if (log.is_group) {
+          saveGroupsMessagesLogs(log);
+        } else {
+          saveContactsMessagesLogs(log);
+        }
         if (ack >= 2) {
           delete pendingLogs[idStr];
         }
@@ -102,7 +106,7 @@ class WhatsAppClient extends EventEmitter {
     }
   }
 
-  trackMessageLog(messageId: string, log: ContactMessageLog): void {
+  trackMessageLog(messageId: string, log: MessageLog): void {
     pendingLogs[messageId] = log;
   }
 }

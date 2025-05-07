@@ -1,15 +1,18 @@
 import * as fs from "fs";
+import * as path from "path";
 import * as XLSX from "xlsx";
 import {
   CONFIG_FILE,
   CONTACTS_FILE,
+  CONTACTS_MESSAGES_LOG_FOLDER,
+  DAYS_AGO,
   GROUP_CONTACTS_FILE,
   GROUPS_FILE,
+  GROUPS_MESSAGES_LOG_FOLDER,
   SENT_MESSAGES_CONTACTS_FILE,
   SENT_MESSAGES_GROUPS_FILE,
-  CONTACTS_MESSAGES_LOG_FILE,
 } from "../consts";
-import { Config, Contact, Group, ContactMessageLog } from "../types";
+import { Config, Contact, Group, MessageLog } from "../types";
 
 export function getConfig() {
   try {
@@ -228,27 +231,23 @@ export function saveSentMessagesGroups(messages) {
   );
 }
 
-export function saveContactsMessagesLogs(entry: ContactMessageLog) {
+export function saveContactsMessagesLogs(entry: MessageLog) {
+  const currentDate = new Date();
+  const dateString = currentDate.toISOString().split("T")[0];
+  const logFileName = path.join(
+    CONTACTS_MESSAGES_LOG_FOLDER,
+    `contacts_logs_${dateString}.xlsx`
+  );
+
   let workbook: XLSX.WorkBook;
-  let data: ContactMessageLog[] = [];
+  let data: MessageLog[] = [];
 
-  const TEN_DAYS_AGO = Date.now() - 10 * 24 * 60 * 60 * 1000;
-  const sheetName = "AckLog";
-
-  if (fs.existsSync(CONTACTS_MESSAGES_LOG_FILE)) {
-    workbook = XLSX.readFile(CONTACTS_MESSAGES_LOG_FILE);
-    const worksheet = workbook.Sheets[sheetName];
+  if (fs.existsSync(logFileName)) {
+    workbook = XLSX.readFile(logFileName);
+    const worksheet = workbook.Sheets["AckLog"];
     if (worksheet) {
-      data = XLSX.utils.sheet_to_json<ContactMessageLog>(worksheet);
-      data = data.filter((log) => {
-        const time = new Date(log.timestamp ?? "").getTime();
-        return !isNaN(time) && time >= TEN_DAYS_AGO;
-      });
+      data = XLSX.utils.sheet_to_json<MessageLog>(worksheet);
     }
-
-    delete workbook.Sheets[sheetName];
-    const index = workbook.SheetNames.indexOf(sheetName);
-    if (index !== -1) workbook.SheetNames.splice(index, 1);
   } else {
     workbook = XLSX.utils.book_new();
   }
@@ -262,7 +261,94 @@ export function saveContactsMessagesLogs(entry: ContactMessageLog) {
     data.push(entry);
   }
 
-  const newWorksheet = XLSX.utils.json_to_sheet(data);
-  XLSX.utils.book_append_sheet(workbook, newWorksheet, sheetName);
-  XLSX.writeFile(workbook, CONTACTS_MESSAGES_LOG_FILE);
+  const newSheet = XLSX.utils.json_to_sheet(data);
+  workbook.Sheets["AckLog"] = newSheet;
+
+  if (!workbook.SheetNames.includes("AckLog")) {
+    workbook.SheetNames.push("AckLog");
+  }
+
+  XLSX.writeFile(workbook, logFileName);
+}
+
+export function cleanupOldContactsLogs() {
+  if (!fs.existsSync(CONTACTS_MESSAGES_LOG_FOLDER)) {
+    fs.mkdirSync(CONTACTS_MESSAGES_LOG_FOLDER, { recursive: true });
+    return;
+  }
+
+  const files = fs.readdirSync(CONTACTS_MESSAGES_LOG_FOLDER);
+
+  files.forEach((file) => {
+    const filePath = path.join(CONTACTS_MESSAGES_LOG_FOLDER, file);
+    const stats = fs.statSync(filePath);
+
+    const fileAge = stats.mtimeMs;
+
+    if (fileAge < DAYS_AGO) {
+      fs.unlinkSync(filePath);
+      console.log(`Deleted old contacts messages log file: ${file}`);
+    }
+  });
+}
+
+export function saveGroupsMessagesLogs(entry: MessageLog) {
+  const currentDate = new Date();
+  const dateString = currentDate.toISOString().split("T")[0];
+  const logFileName = path.join(
+    GROUPS_MESSAGES_LOG_FOLDER,
+    `groups_logs_${dateString}.xlsx`
+  );
+
+  let workbook: XLSX.WorkBook;
+  let data: MessageLog[] = [];
+
+  if (fs.existsSync(logFileName)) {
+    workbook = XLSX.readFile(logFileName);
+    const worksheet = workbook.Sheets["AckLog"];
+    if (worksheet) {
+      data = XLSX.utils.sheet_to_json<MessageLog>(worksheet);
+    }
+  } else {
+    workbook = XLSX.utils.book_new();
+  }
+
+  const existingIndex = data.findIndex(
+    (d) => d.message_id === entry.message_id
+  );
+  if (existingIndex !== -1) {
+    data[existingIndex] = entry;
+  } else {
+    data.push(entry);
+  }
+
+  const newSheet = XLSX.utils.json_to_sheet(data);
+  workbook.Sheets["AckLog"] = newSheet;
+
+  if (!workbook.SheetNames.includes("AckLog")) {
+    workbook.SheetNames.push("AckLog");
+  }
+
+  XLSX.writeFile(workbook, logFileName);
+}
+
+export function cleanupOldGroupsLogs() {
+  if (!fs.existsSync(GROUPS_MESSAGES_LOG_FOLDER)) {
+    fs.mkdirSync(GROUPS_MESSAGES_LOG_FOLDER, { recursive: true });
+    return;
+  }
+
+  const files = fs.readdirSync(GROUPS_MESSAGES_LOG_FOLDER);
+
+  files.forEach((file) => {
+    const filePath = path.join(GROUPS_MESSAGES_LOG_FOLDER, file);
+    const stats = fs.statSync(filePath);
+
+    const fileAge = stats.mtimeMs;
+
+    if (fileAge < DAYS_AGO) {
+      fs.unlinkSync(filePath);
+      console.log(`Deleted old groups messages log file: ${file}`);
+    }
+  });
 }

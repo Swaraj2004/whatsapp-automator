@@ -150,8 +150,8 @@ export function createMessageContactsTab(): QWidget {
         const stats = fs.statSync(filePath);
         const fileSize = stats.size; // size in bytes
 
-        if (fileSize <= 10 * 1024 * 1024) {
-          // 10 MB limit
+        if (fileSize <= 30 * 1024 * 1024) {
+          // 30 MB limit
           const fileItemWidget = createListItem(
             messageContactsTab,
             filePath,
@@ -163,7 +163,7 @@ export function createMessageContactsTab(): QWidget {
           filesList.setItemWidget(listItem, fileItemWidget);
         } else {
           logMessage(
-            `❌ File "${filePath}" exceeds 10 MB limit and was not added.`
+            `❌ File "${filePath}" exceeds 30 MB limit and was not added.`
           );
         }
       }

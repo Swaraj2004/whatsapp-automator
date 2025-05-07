@@ -8,6 +8,7 @@ import {
 import dotenv from "dotenv";
 import path from "path";
 import WhatsAppClient from "./backend/client";
+import { cleanupOldContactsLogs, cleanupOldGroupsLogs } from "./backend/utils";
 import { initWebSocket } from "./backend/wsClient";
 import { createContactsTab } from "./ui/tabs/contacts";
 import { createGroupContactsTab } from "./ui/tabs/groupContacts";
@@ -123,6 +124,9 @@ async function startApp() {
   mainWindow.show();
 
   initWebSocket(); // Initialize WebSocket connection
+  // Cleanup old logs
+  cleanupOldContactsLogs();
+  cleanupOldGroupsLogs();
 }
 
 startApp().catch((error) => {

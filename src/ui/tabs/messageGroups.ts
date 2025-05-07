@@ -148,7 +148,7 @@ export function createMessageGroupsTab(): QWidget {
         const stats = fs.statSync(filePath);
         const fileSize = stats.size;
 
-        if (fileSize <= 10 * 1024 * 1024) {
+        if (fileSize <= 30 * 1024 * 1024) {
           const fileItemWidget = createListItem(
             messageGroupsTab,
             filePath,
@@ -160,7 +160,7 @@ export function createMessageGroupsTab(): QWidget {
           filesList.setItemWidget(listItem, fileItemWidget);
         } else {
           logMessage(
-            `❌ File "${filePath}" exceeds 10 MB limit and was not added.`
+            `❌ File "${filePath}" exceeds 30 MB limit and was not added.`
           );
         }
       }

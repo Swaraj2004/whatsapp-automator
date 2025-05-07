@@ -1,4 +1,6 @@
 import fs from "fs";
+import { MessageMedia } from "whatsapp-web.js";
+import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
 import {
   cmClearLog,
   cmIsStopped,
@@ -6,9 +8,14 @@ import {
   cmResetStop,
   cmStopSending,
 } from "../globals/contactsMessagingGolbals";
-import { MessageMedia } from "whatsapp-web.js";
-import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
-import { Contact, ContactMessageLog, Group } from "../types";
+import {
+  gmClearLog,
+  gmIsStopped,
+  gmLog,
+  gmResetStop,
+  gmStopSending,
+} from "../globals/groupsMessagingGlobals";
+import { Contact, Group } from "../types";
 import WhatsAppClient from "./client";
 import {
   delayRandom,
@@ -18,20 +25,12 @@ import {
   loadGroupsFromExcel,
   loadSentMessagesContacts,
   loadSentMessagesGroups,
-  saveContactsMessagesLogs,
   saveContactsToExcel,
   saveGroupContactsToExcel,
   saveGroupsToExcel,
   saveSentMessagesContacts,
   saveSentMessagesGroups,
 } from "./utils";
-import {
-  gmClearLog,
-  gmIsStopped,
-  gmLog,
-  gmResetStop,
-  gmStopSending,
-} from "../globals/groupsMessagingGlobals";
 
 const client = WhatsAppClient.client;
 
@@ -253,11 +252,11 @@ export async function sendMessagesToContacts({
         );
         WhatsAppClient.trackMessageLog(sentMsg.id._serialized, {
           name: contact.name ?? "",
-          number: contact.number,
           chat_id: contact.user_id,
           message_id: sentMsg.id._serialized,
           ack: 0, // Initially 0, will be updated via 'message_ack'
           timestamp: new Date().toISOString(),
+          is_group: false,
         });
         sentMessages.push({
           chatId: contact.user_id,
@@ -289,11 +288,11 @@ export async function sendMessagesToContacts({
         );
         WhatsAppClient.trackMessageLog(sentMedia.id._serialized, {
           name: contact.name ?? "",
-          number: contact.number,
           chat_id: contact.user_id,
           message_id: sentMedia.id._serialized,
           ack: 0,
           timestamp: new Date().toISOString(),
+          is_group: false,
         });
         sentMessages.push({
           chatId: contact.user_id,
@@ -444,7 +443,14 @@ export async function sendMessagesToGroups({
             group.name ?? "Unknown Group"
           }`
         );
-
+        WhatsAppClient.trackMessageLog(sentMsg.id._serialized, {
+          name: group.name ?? "",
+          chat_id: group.group_id,
+          message_id: sentMsg.id._serialized,
+          ack: 0, // Initially 0, will be updated via 'message_ack'
+          timestamp: new Date().toISOString(),
+          is_group: true,
+        });
         sentMessages.push({
           chatId: group.group_id,
           msgId: sentMsg.id._serialized,
@@ -473,7 +479,14 @@ export async function sendMessagesToGroups({
             .split("/")
             .pop()}) to ${group.name ?? "Unknown Group"}`
         );
-
+        WhatsAppClient.trackMessageLog(sentMedia.id._serialized, {
+          name: group.name ?? "",
+          chat_id: group.group_id,
+          message_id: sentMedia.id._serialized,
+          ack: 0,
+          timestamp: new Date().toISOString(),
+          is_group: true,
+        });
         sentMessages.push({
           chatId: group.group_id,
           msgId: sentMedia.id._serialized,
