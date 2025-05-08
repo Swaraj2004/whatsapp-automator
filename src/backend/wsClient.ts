@@ -65,8 +65,14 @@ export function initWebSocket() {
         const msg = JSON.parse(data.toString());
 
         if (msg.type === "file-transfer") {
-          const { message, files, selectedTags, postingType, selectedDevices } =
-            msg;
+          const {
+            message,
+            sendAsContact,
+            files,
+            selectedTags,
+            postingType,
+            selectedDevices,
+          } = msg;
 
           if (!selectedDevices.includes(PHONE_NAME)) {
             console.log("⏩ Skipping message: not in selectedDevices");
@@ -93,6 +99,7 @@ export function initWebSocket() {
           if (postingType === "contacts") {
             await sendMessagesToContacts({
               message,
+              sendAsContact,
               attachedFiles,
               selectedTags,
               eventType: "serverDriven",
@@ -100,6 +107,7 @@ export function initWebSocket() {
           } else if (postingType === "groups") {
             await sendMessagesToGroups({
               message,
+              sendAsContact,
               attachedFiles,
               selectedTags,
               eventType: "serverDriven",

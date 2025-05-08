@@ -1,6 +1,7 @@
 import {
   CursorShape,
   FlexLayout,
+  QCheckBox,
   QFileDialog,
   QLabel,
   QListWidget,
@@ -100,9 +101,19 @@ export function createMessageContactsTab(): QWidget {
   topLayout.addWidget(undoMessagesButton);
   topLayout.addWidget(tagsSelector.widget);
 
+  const messageLabelContainer = new QWidget();
+  messageLabelContainer.setObjectName("messageLabelContainer");
+  const messageLabelLayout = new FlexLayout();
+  messageLabelContainer.setLayout(messageLabelLayout);
+
   const messageLabel = new QLabel();
   messageLabel.setObjectName("messageLabel");
   messageLabel.setText("Message Text");
+
+  const contactsToggle = new QCheckBox();
+  contactsToggle.setText("Contacts");
+  contactsToggle.setObjectName("contactsToggle");
+  contactsToggle.setCursor(CursorShape.PointingHandCursor);
 
   // Message Input
   const messageInput = new QTextEdit();
@@ -229,6 +240,7 @@ export function createMessageContactsTab(): QWidget {
   sendMessagesButton.addEventListener("clicked", async () => {
     await sendMessagesToContacts({
       message: messageInput.toPlainText(),
+      sendAsContact: contactsToggle.isChecked(),
       attachedFiles: attachedFiles,
       selectedTags: tagsSelector.getSelectedTags(),
       eventType: "uiDriven",
@@ -242,7 +254,9 @@ export function createMessageContactsTab(): QWidget {
   layout.addWidget(bottomContainer);
   bottomLayout.addWidget(leftContainer);
   bottomLayout.addWidget(rightContainer);
-  leftLayout.addWidget(messageLabel);
+  messageLabelLayout.addWidget(messageLabel);
+  messageLabelLayout.addWidget(contactsToggle);
+  leftLayout.addWidget(messageLabelContainer);
   leftLayout.addWidget(messageInput);
   leftLayout.addWidget(filesContainer);
   leftLayout.addWidget(filesList);
@@ -312,6 +326,13 @@ export function createMessageContactsTab(): QWidget {
     #leftContainer {
       flex: 1;
       margin-right: 10px;
+    }
+    #messageLabelContainer {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    #contactsToggle {
+      font-weight: bold;
     }
     #messageInput {
       min-height: 266px;

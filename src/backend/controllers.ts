@@ -1,5 +1,5 @@
 import fs from "fs";
-import { MessageMedia } from "whatsapp-web.js";
+import WAWebJS, { MessageMedia } from "whatsapp-web.js";
 import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
 import {
   cmClearLog,
@@ -180,12 +180,14 @@ export async function extractMultipleGroupContacts(
 
 export async function sendMessagesToContacts({
   message,
+  sendAsContact,
   attachedFiles,
   selectedTags,
   eventType,
   fileName,
 }: {
   message: string;
+  sendAsContact: boolean;
   attachedFiles: Map<string, string>;
   selectedTags: string[];
   eventType: "uiDriven" | "serverDriven";
@@ -244,7 +246,22 @@ export async function sendMessagesToContacts({
 
     try {
       if (message) {
-        const sentMsg = await client.sendMessage(contact.user_id, message);
+        let sentMsg: WAWebJS.Message;
+        if (sendAsContact) {
+          const contacts = await Promise.all(
+            message
+              .split(",")
+              .map(
+                async (num) => await client.getContactById(num.trim() + "@c.us")
+              )
+          );
+          sentMsg = await client.sendMessage(
+            contact.user_id,
+            contacts.length > 1 ? contacts : contacts[0]
+          );
+        } else {
+          sentMsg = await client.sendMessage(contact.user_id, message);
+        }
         log(
           `✅ (${i + 1}/${filteredContacts.length}) Sent message to ${
             contact.name ?? ""
@@ -362,12 +379,14 @@ export async function undoContactsMessages() {
 
 export async function sendMessagesToGroups({
   message,
+  sendAsContact,
   attachedFiles,
   selectedTags,
   eventType,
   fileName,
 }: {
   message: string;
+  sendAsContact: boolean;
   attachedFiles: Map<string, string>;
   selectedTags: string[];
   eventType: "uiDriven" | "serverDriven";
@@ -437,7 +456,22 @@ export async function sendMessagesToGroups({
 
     try {
       if (message) {
-        const sentMsg = await client.sendMessage(group.group_id, message);
+        let sentMsg: WAWebJS.Message;
+        if (sendAsContact) {
+          const contacts = await Promise.all(
+            message
+              .split(",")
+              .map(
+                async (num) => await client.getContactById(num.trim() + "@c.us")
+              )
+          );
+          sentMsg = await client.sendMessage(
+            group.group_id,
+            contacts.length > 1 ? contacts : contacts[0]
+          );
+        } else {
+          sentMsg = await client.sendMessage(group.group_id, message);
+        }
         log(
           `✅ (${i + 1}/${filteredGroups.length}) Sent message to ${
             group.name ?? "Unknown Group"

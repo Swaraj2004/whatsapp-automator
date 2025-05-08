@@ -1,6 +1,7 @@
 import {
   CursorShape,
   FlexLayout,
+  QCheckBox,
   QFileDialog,
   QLabel,
   QListWidget,
@@ -100,9 +101,19 @@ export function createMessageGroupsTab(): QWidget {
   topLayout.addWidget(undoMessagesButton);
   topLayout.addWidget(tagsSelector.widget);
 
+  const messageLabelContainer = new QWidget();
+  messageLabelContainer.setObjectName("messageLabelContainer");
+  const messageLabelLayout = new FlexLayout();
+  messageLabelContainer.setLayout(messageLabelLayout);
+
   const messageLabel = new QLabel();
   messageLabel.setObjectName("messageLabel");
   messageLabel.setText("Message Text");
+
+  const contactsToggle = new QCheckBox();
+  contactsToggle.setText("Contacts");
+  contactsToggle.setObjectName("contactsToggle");
+  contactsToggle.setCursor(CursorShape.PointingHandCursor);
 
   const messageInput = new QTextEdit();
   messageInput.setPlaceholderText("Type message");
@@ -225,6 +236,7 @@ export function createMessageGroupsTab(): QWidget {
   sendMessagesButton.addEventListener("clicked", async () => {
     await sendMessagesToGroups({
       message: messageInput.toPlainText(),
+      sendAsContact: contactsToggle.isChecked(),
       attachedFiles: attachedFiles,
       selectedTags: tagsSelector.getSelectedTags(),
       eventType: "uiDriven",
@@ -237,7 +249,9 @@ export function createMessageGroupsTab(): QWidget {
   layout.addWidget(bottomContainer);
   bottomLayout.addWidget(leftContainer);
   bottomLayout.addWidget(rightContainer);
-  leftLayout.addWidget(messageLabel);
+  messageLabelLayout.addWidget(messageLabel);
+  messageLabelLayout.addWidget(contactsToggle);
+  leftLayout.addWidget(messageLabelContainer);
   leftLayout.addWidget(messageInput);
   leftLayout.addWidget(filesContainer);
   leftLayout.addWidget(filesList);
@@ -306,6 +320,13 @@ export function createMessageGroupsTab(): QWidget {
     #leftContainer {
       flex: 1;
       margin-right: 10px;
+    }
+    #messageLabelContainer {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    #contactsToggle {
+      font-weight: bold;
     }
     #messageInput {
       min-height: 266px;
