@@ -1,6 +1,12 @@
 import fs from "fs";
+import path from "path";
 import WAWebJS, { MessageMedia } from "whatsapp-web.js";
-import { CONTACTS_FILE, GROUP_CONTACTS_FILE, GROUPS_FILE } from "../consts";
+import {
+  CONTACTS_FILE,
+  GROUP_CONTACTS_FILE,
+  GROUPS_FILE,
+  VCF_SAVE_DIR,
+} from "../consts";
 import {
   cmClearLog,
   cmIsStopped,
@@ -15,7 +21,7 @@ import {
   gmResetStop,
   gmStopSending,
 } from "../globals/groupsMessagingGlobals";
-import { Contact, Group } from "../types";
+import { Contact, Group, VcfContact } from "../types";
 import WhatsAppClient from "./client";
 import {
   delayRandom,
@@ -584,4 +590,39 @@ export async function undoGroupsMessages() {
 
   log("✅ Deleted all messages!");
   saveSentMessagesGroups([]);
+}
+
+export async function generateVcfFiles(contacts: VcfContact[]) {
+  if (!fs.existsSync(VCF_SAVE_DIR)) {
+    fs.mkdirSync(VCF_SAVE_DIR, { recursive: true });
+  }
+
+  const fileGroups: Record<string, VcfContact[]> = {};
+
+  for (const contact of contacts) {
+    const key = contact.filename.endsWith(".vcf")
+      ? contact.filename
+      : `${contact.filename}.vcf`;
+    if (!fileGroups[key]) {
+      fileGroups[key] = [];
+    }
+    fileGroups[key].push(contact);
+  }
+
+  for (const [filename, group] of Object.entries(fileGroups)) {
+    const vCardEntries = group.map((contact) => {
+      const safeName = contact.name.trim();
+      const safeNumber = contact.number.trim();
+      return [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        `FN:${safeName}`,
+        `TEL;TYPE=CELL:${safeNumber}`,
+        "END:VCARD",
+      ].join("\n");
+    });
+
+    const filePath = path.join(VCF_SAVE_DIR, filename);
+    fs.writeFileSync(filePath, vCardEntries.join("\n\n"), "utf-8");
+  }
 }

@@ -16,6 +16,7 @@ import { createGroupsTab } from "./ui/tabs/groups";
 import { createMessageContactsTab } from "./ui/tabs/messageContacts";
 import { createMessageGroupsTab } from "./ui/tabs/messageGroups";
 import { createSettingsTab } from "./ui/tabs/settings";
+import { createVCFGeneratorTab } from "./ui/tabs/vcfGenerator";
 
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 dotenv.config({ path: path.resolve(__dirname, ".env.pass") });
@@ -62,7 +63,7 @@ function waitForWhatsAppClient() {
       reject(
         new Error("❌ WhatsApp Client did not become ready within timeout")
       );
-    }, 60000);
+    }, 200000);
   });
 }
 
@@ -109,6 +110,7 @@ async function startApp() {
   tabWidget.addTab(createGroupContactsTab(), new QIcon(), "Group Contacts");
   tabWidget.addTab(createMessageContactsTab(), new QIcon(), "Message Contacts");
   tabWidget.addTab(createMessageGroupsTab(), new QIcon(), "Message Groups");
+  tabWidget.addTab(createVCFGeneratorTab(), new QIcon(), "VCF Generator");
   tabWidget.addTab(createSettingsTab(), new QIcon(), "Settings");
 
   // Make the tab widget fill the available space

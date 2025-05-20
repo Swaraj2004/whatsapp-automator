@@ -12,7 +12,7 @@ import {
   SENT_MESSAGES_CONTACTS_FILE,
   SENT_MESSAGES_GROUPS_FILE,
 } from "../consts";
-import { Config, Contact, Group, MessageLog } from "../types";
+import { Config, Contact, Group, MessageLog, VcfContact } from "../types";
 
 export function getConfig() {
   try {
@@ -351,4 +351,40 @@ export function cleanupOldGroupsLogs() {
       console.log(`Deleted old groups messages log file: ${file}`);
     }
   });
+}
+
+export function loadVcfContactsFromExcel(
+  filePath: string,
+  logger = console.log
+): { contacts: VcfContact[] } {
+  if (!filePath || !fs.existsSync(filePath)) {
+    logger("❌ No contacts file found!");
+    return { contacts: [] };
+  }
+
+  try {
+    const workbook = XLSX.readFile(filePath);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    if (!sheet) {
+      logger("❌ Sheet not found in the file!");
+      return { contacts: [] };
+    }
+
+    const contacts = XLSX.utils.sheet_to_json<VcfContact>(sheet);
+    const vcfContacts = contacts.map((contact) => {
+      const { name, number, filename } = contact;
+      return {
+        name: name || "N/A",
+        number: (typeof number === "number" ? `${number}` : number) || "N/A",
+        filename: filename || "N/A",
+      };
+    });
+
+    return {
+      contacts: vcfContacts,
+    };
+  } catch (error) {
+    logger(`❌ Error reading contacts file: ${error.message}`);
+    return { contacts: [] };
+  }
 }

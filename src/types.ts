@@ -32,3 +32,9 @@ export type MessageLog = {
   timestamp: string;
   is_group: boolean;
 };
+
+export type VcfContact = {
+  name: string;
+  number: string;
+  filename: string;
+};
