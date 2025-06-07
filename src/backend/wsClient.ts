@@ -6,7 +6,11 @@ import { FILES_SAVE_DIR } from "../consts";
 import { cmIsStopped } from "../globals/contactsMessagingGolbals";
 import { gmIsStopped } from "../globals/groupsMessagingGlobals";
 import { sendMessagesToContacts, sendMessagesToGroups } from "./controllers";
-import { loadContactsFromExcel, loadGroupsFromExcel } from "./utils";
+import {
+  delayRandom,
+  loadContactsFromExcel,
+  loadGroupsFromExcel,
+} from "./utils";
 
 if (fs.existsSync(FILES_SAVE_DIR)) {
   fs.readdirSync(FILES_SAVE_DIR).forEach((file) => {
@@ -24,9 +28,22 @@ if (fs.existsSync(FILES_SAVE_DIR)) {
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const PHONE_NAME = process.env.PHONE_NAME;
-const WS_URL = process.env.WS_URL || "ws://localhost:3000/ws";
+const WS_URL = process.env.WS_URL || "ws://localhost:3000/";
 
 let ws: WebSocket;
+
+function wsToHttpOrigin(wsUrl: string): string {
+  const urlObj = new URL(wsUrl);
+  if (urlObj.protocol === "wss:") {
+    urlObj.protocol = "https:";
+  } else if (urlObj.protocol === "ws:") {
+    urlObj.protocol = "http:";
+  }
+  urlObj.pathname = "/";
+  urlObj.search = "";
+  urlObj.hash = "";
+  return urlObj.toString();
+}
 
 export function initWebSocket() {
   function connect() {
@@ -37,7 +54,6 @@ export function initWebSocket() {
       const { tags: contactTags } = loadContactsFromExcel();
       const { tags: groupTags } = loadGroupsFromExcel();
 
-      console.log(PHONE_NAME, WS_URL);
       ws.send(
         JSON.stringify({
           type: "register",
@@ -82,21 +98,28 @@ export function initWebSocket() {
           const attachedFiles = new Map<string, string>();
 
           for (const file of files) {
-            const { name, caption, base64 } = file;
+            const { name, caption, path: relativePath } = file;
 
-            const uniqueFilename = `${Date.now()}-${name}`;
-            const savePath = path.join(FILES_SAVE_DIR, uniqueFilename);
-            const buffer = Buffer.from(base64, "base64");
+            const baseUrl = wsToHttpOrigin(WS_URL);
+            const fileUrl = new URL(relativePath, baseUrl).toString();
 
-            fs.writeFileSync(savePath, new Uint8Array(buffer));
+            await delayRandom(console.log, 1000, 6000);
+            const response = await fetch(fileUrl);
+            if (!response.ok) {
+              console.error(
+                `Failed to fetch file ${fileUrl}: ${response.statusText}`
+              );
+              continue;
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const uint8array = new Uint8Array(arrayBuffer);
+            const savePath = path.join(FILES_SAVE_DIR, name);
+            fs.writeFileSync(savePath, uint8array);
             attachedFiles.set(savePath, caption);
-
-            console.log(`💾 Saved file: ${savePath}`);
           }
 
-          console.log("📁 Files saved, starting message sending...");
-
-          if (postingType === "contacts") {
+          if (postingType === "contact") {
             await sendMessagesToContacts({
               message,
               sendAsContact,
@@ -104,7 +127,7 @@ export function initWebSocket() {
               selectedTags,
               eventType: "serverDriven",
             });
-          } else if (postingType === "groups") {
+          } else if (postingType === "group") {
             await sendMessagesToGroups({
               message,
               sendAsContact,
