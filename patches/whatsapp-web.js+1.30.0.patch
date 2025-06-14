@@ -1,8 +1,8 @@
 diff --git a/node_modules/whatsapp-web.js/index.d.ts b/node_modules/whatsapp-web.js/index.d.ts
-index 22aea7e..b59937b 100644
+index 53a59c9..d1cd2c8 100644
 --- a/node_modules/whatsapp-web.js/index.d.ts
 +++ b/node_modules/whatsapp-web.js/index.d.ts
-@@ -124,7 +124,7 @@ declare namespace WAWebJS {
+@@ -160,7 +160,7 @@ declare namespace WAWebJS {
           * @param showNotification - Show notification to pair on phone number
           * @returns {Promise<string>} - Returns a pairing code in format "ABCDEFGH"
           */
