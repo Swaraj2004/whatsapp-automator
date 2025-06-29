@@ -61,8 +61,8 @@ export function createGroupContactsTab(): QWidget {
     }
 
     logMessage("✅ Started extracting contacts by ID...");
-    await extractGroupContacts(groupId, logMessage);
-    loadGroupContacts();
+    const success = await extractGroupContacts(groupId, logMessage);
+    if (success) loadGroupContacts();
   });
 
   const extractByExcelButton = new QPushButton();
@@ -88,8 +88,11 @@ export function createGroupContactsTab(): QWidget {
       }
 
       logMessage("✅ Started extracting contacts by Excel...");
-      await extractMultipleGroupContacts(response.groups, logMessage);
-      loadGroupContacts();
+      const success = await extractMultipleGroupContacts(
+        response.groups,
+        logMessage
+      );
+      if (success) loadGroupContacts();
     }
   });
 
@@ -185,12 +188,6 @@ export function createGroupContactsTab(): QWidget {
       border: 1px solid #ccc;
       border-radius: 4px;
       gridline-color: #eee;
-    }
-    #statusLabel {
-      color: #333;
-      font-size: 14px;
-      font-weight: bold;
-      min-width: 300px;
     }
   `);
 

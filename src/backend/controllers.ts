@@ -111,6 +111,7 @@ export async function extractGroupContacts(
 
     if (!chat || !chat.isGroup) {
       logger("❌ Group not found! Please enter a valid group ID.");
+      return false;
     }
 
     // Extract participants
@@ -123,6 +124,7 @@ export async function extractGroupContacts(
 
     if (participants.length === 0) {
       logger("❌ No contacts found in this group!");
+      return false;
     }
 
     saveGroupContactsToExcel(participants);
@@ -131,7 +133,9 @@ export async function extractGroupContacts(
     );
   } catch (error) {
     logger(`❌ Error: ${error.message || "Unknown error"}`);
+    return false;
   }
+  return true;
 }
 
 export async function extractMultipleGroupContacts(
@@ -174,11 +178,49 @@ export async function extractMultipleGroupContacts(
 
     if (allContacts.length === 0) {
       logger("❌ No contacts found in the groups.");
-      return;
+      return false;
     }
 
     saveGroupContactsToExcel(allContacts);
     logger(`✅ Contacts from groups saved to '${GROUP_CONTACTS_FILE}'`);
+  } catch (error) {
+    logger(`❌ Error: ${error.message || "Unknown error"}`);
+    return false;
+  }
+  return true;
+}
+
+export async function clearChatById(chatId: string, logger = console.log) {
+  try {
+    const chat = await client.getChatById(chatId).catch(() => null);
+
+    if (!chat) {
+      logger("❌ Chat not found! Please enter a valid Chat ID.");
+      return;
+    }
+
+    await chat.clearMessages();
+    logger(`✅ Cleared chat for: ${chat.name || "Unknown"} (${chatId})`);
+  } catch (error) {
+    logger(`❌ Error: ${error.message || "Unknown error"}`);
+  }
+}
+
+export async function clearAllChats(logger = console.log) {
+  try {
+    const chats = await client.getChats();
+
+    for (const chat of chats) {
+      await chat.clearMessages();
+      logger(
+        `✅ Cleared chat for: ${chat.name || "Unknown"} (${
+          chat.id._serialized
+        })`
+      );
+      await delayRandom(logger, 6000, 12000);
+    }
+
+    logger("✅ Cleared all chats!");
   } catch (error) {
     logger(`❌ Error: ${error.message || "Unknown error"}`);
   }
