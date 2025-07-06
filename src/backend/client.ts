@@ -18,7 +18,6 @@ if (!CHROME_PATH) {
 const pendingLogs: Record<string, MessageLog> = {};
 
 const args = [
-  "--disable-gpu",
   "--no-sandbox",
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
@@ -32,7 +31,6 @@ const args = [
   "--disable-background-timer-throttling",
   "--disable-renderer-backgrounding",
   "--disable-backgrounding-occluded-windows",
-  "--js-flags=--max-old-space-size=512",
   "--window-size=1000,700",
 ];
 
