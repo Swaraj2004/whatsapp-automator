@@ -14,6 +14,18 @@ export const SENT_MESSAGES_GROUPS_FILE = path.join(
   BASE_DIR,
   "sent_messages_groups.json"
 );
+export const CM_PROGRESS_LOG_FILE = path.join(
+  BASE_DIR,
+  "contacts_messages_progress.json"
+);
+export const GM_PROGRESS_LOG_FILE = path.join(
+  BASE_DIR,
+  "groups_messages_progress.json"
+);
+export const CRITICAL_ERRORS_LOG_FILE = path.join(
+  BASE_DIR,
+  "critical_errors.log"
+);
 export const CONFIG_FILE = path.join(BASE_DIR, "config.json");
 export const GROUPS_FILE = path.join(BASE_DIR, "groups.xlsx");
 export const CONTACTS_FILE = path.join(BASE_DIR, "contacts.xlsx");

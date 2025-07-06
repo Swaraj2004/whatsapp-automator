@@ -1,11 +1,15 @@
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import * as XLSX from "xlsx";
 import {
+  CM_PROGRESS_LOG_FILE,
   CONFIG_FILE,
   CONTACTS_FILE,
   CONTACTS_MESSAGES_LOG_FOLDER,
+  CRITICAL_ERRORS_LOG_FILE,
   DAYS_AGO,
+  GM_PROGRESS_LOG_FILE,
   GROUP_CONTACTS_FILE,
   GROUPS_FILE,
   GROUPS_MESSAGES_LOG_FOLDER,
@@ -271,6 +275,52 @@ export function saveContactsMessagesLogs(entry: MessageLog) {
   XLSX.writeFile(workbook, logFileName);
 }
 
+export function generateInputHash({
+  message,
+  sendAsContact,
+  attachedFiles,
+  selectedTags,
+}: {
+  message: string;
+  sendAsContact: boolean;
+  attachedFiles: Map<string, string>;
+  selectedTags: string[];
+}) {
+  const hash = crypto.createHash("sha256");
+  const sortedTags = [...selectedTags].sort();
+  const files = Object.fromEntries(attachedFiles);
+  hash.update(JSON.stringify({ message, sendAsContact, files, sortedTags }));
+  return hash.digest("hex");
+}
+
+export function saveCMProgress(data: {
+  hash: string;
+  sentSteps: Record<string, string[]>;
+  lastErrorChat?: string;
+}) {
+  fs.writeFileSync(CM_PROGRESS_LOG_FILE, JSON.stringify(data, null, 2));
+}
+
+export function loadCMProgress(): {
+  hash: string;
+  sentSteps: Record<string, string[]>;
+  lastErrorChat?: string;
+} | null {
+  if (!fs.existsSync(CM_PROGRESS_LOG_FILE)) return null;
+  return JSON.parse(fs.readFileSync(CM_PROGRESS_LOG_FILE, "utf-8"));
+}
+
+export function clearCMProgress() {
+  if (fs.existsSync(CM_PROGRESS_LOG_FILE)) fs.unlinkSync(CM_PROGRESS_LOG_FILE);
+}
+
+export function logCMCriticalError(contactName: string, error: Error) {
+  const line = `[${new Date().toISOString()}] Error on contact ${contactName}: ${
+    error.message
+  }\n`;
+  fs.appendFileSync(CRITICAL_ERRORS_LOG_FILE, line);
+}
+
 export function cleanupOldContactsLogs() {
   if (!fs.existsSync(CONTACTS_MESSAGES_LOG_FOLDER)) {
     fs.mkdirSync(CONTACTS_MESSAGES_LOG_FOLDER, { recursive: true });
@@ -330,6 +380,34 @@ export function saveGroupsMessagesLogs(entry: MessageLog) {
   }
 
   XLSX.writeFile(workbook, logFileName);
+}
+
+export function saveGMProgress(data: {
+  hash: string;
+  sentSteps: Record<string, string[]>;
+  lastErrorChat?: string;
+}) {
+  fs.writeFileSync(GM_PROGRESS_LOG_FILE, JSON.stringify(data, null, 2));
+}
+
+export function loadGMProgress(): {
+  hash: string;
+  sentSteps: Record<string, string[]>;
+  lastErrorChat?: string;
+} | null {
+  if (!fs.existsSync(GM_PROGRESS_LOG_FILE)) return null;
+  return JSON.parse(fs.readFileSync(GM_PROGRESS_LOG_FILE, "utf-8"));
+}
+
+export function clearGMProgress() {
+  if (fs.existsSync(GM_PROGRESS_LOG_FILE)) fs.unlinkSync(GM_PROGRESS_LOG_FILE);
+}
+
+export function logGMCriticalError(groupName: string, error: Error) {
+  const line = `[${new Date().toISOString()}] Error on group ${groupName}: ${
+    error.message
+  }\n`;
+  fs.appendFileSync(CRITICAL_ERRORS_LOG_FILE, line);
 }
 
 export function cleanupOldGroupsLogs() {

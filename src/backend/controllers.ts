@@ -24,14 +24,21 @@ import {
 import { Contact, Group, VcfContact } from "../types";
 import WhatsAppClient from "./client";
 import {
+  clearCMProgress,
+  clearGMProgress,
   delayRandom,
+  generateInputHash,
   getConfig,
   getRandomInt,
+  loadCMProgress,
   loadContactsFromExcel,
+  loadGMProgress,
   loadGroupsFromExcel,
   loadSentMessagesContacts,
   loadSentMessagesGroups,
+  saveCMProgress,
   saveContactsToExcel,
+  saveGMProgress,
   saveGroupContactsToExcel,
   saveGroupsToExcel,
   saveSentMessagesContacts,
@@ -273,8 +280,8 @@ export async function sendMessagesToContacts({
     eventType === "uiDriven" ? fileName : CONTACTS_FILE,
     log
   );
-  const sendToAll = selectedTags.includes("All");
 
+  const sendToAll = selectedTags.includes("All");
   const filteredContacts = sendToAll
     ? contacts
     : contacts.filter((contact) => {
@@ -286,19 +293,41 @@ export async function sendMessagesToContacts({
         return selectedTags.some((tag) => contactTags.includes(tag));
       });
 
+  const inputHash = generateInputHash({
+    message,
+    sendAsContact,
+    attachedFiles,
+    selectedTags,
+  });
+
+  const previousProgress = loadCMProgress();
+  const resumeMode = previousProgress?.hash === inputHash;
+  const sentStepsMap: Record<string, string[]> = resumeMode
+    ? previousProgress.sentSteps
+    : {};
+
   const sentMessages = [];
   saveSentMessagesContacts(sentMessages);
 
   const { delay } = await getConfig();
+  let isStopedLogged = false;
 
   for (const [i, contact] of filteredContacts.entries()) {
+    const userId = contact.user_id;
+
     if (cmIsStopped()) {
-      log("🛑 Stopped sending messages!");
+      if (!isStopedLogged) {
+        log("🛑 Manually stopped! Saving progress...");
+        saveCMProgress({
+          hash: inputHash,
+          sentSteps: sentStepsMap,
+        });
+      }
       break;
     }
 
     try {
-      if (message) {
+      if (!(sentStepsMap[userId] || []).includes("msg") && message) {
         let sentMsg: WAWebJS.Message;
         if (sendAsContact) {
           const contacts = await Promise.all(
@@ -309,36 +338,55 @@ export async function sendMessagesToContacts({
               )
           );
           sentMsg = await client.sendMessage(
-            contact.user_id,
+            userId,
             contacts.length > 1 ? contacts : contacts[0]
           );
         } else {
-          sentMsg = await client.sendMessage(contact.user_id, message);
+          sentMsg = await client.sendMessage(userId, message);
         }
+
         log(
           `✅ (${i + 1}/${filteredContacts.length}) Sent message to ${
             contact.name ?? ""
           } (${contact.number})`
         );
+
         WhatsAppClient.trackMessageLog(sentMsg.id._serialized, {
           name: contact.name ?? "",
-          chat_id: contact.user_id,
+          chat_id: userId,
           message_id: sentMsg.id._serialized,
           ack: 0, // Initially 0, will be updated via 'message_ack'
           timestamp: new Date().toISOString(),
           is_group: false,
         });
+
         sentMessages.push({
-          chatId: contact.user_id,
+          chatId: userId,
           msgId: sentMsg.id._serialized,
         });
         saveSentMessagesContacts(sentMessages);
+
+        const newSteps = [...(sentStepsMap[userId] || []), "msg"];
+        sentStepsMap[userId] = newSteps;
+        saveCMProgress({
+          hash: inputHash,
+          sentSteps: sentStepsMap,
+        });
+
         await delayRandom(log, delay.min, delay.max);
       }
 
       for (const [filePath, caption] of attachedFiles.entries()) {
+        const mediaStep = `media:${filePath}`;
+        if ((sentStepsMap[userId] || []).includes(mediaStep)) continue;
+
         if (cmIsStopped()) {
-          log("🛑 Stopped sending messages!");
+          log("🛑 Manually stopped! Saving progress...");
+          saveCMProgress({
+            hash: inputHash,
+            sentSteps: sentStepsMap,
+          });
+          isStopedLogged = true;
           break;
         }
 
@@ -348,31 +396,50 @@ export async function sendMessagesToContacts({
         }
 
         const media = MessageMedia.fromFilePath(filePath);
-        const sentMedia = await client.sendMessage(contact.user_id, media, {
+        const sentMedia = await client.sendMessage(userId, media, {
           caption,
         });
+
         log(
           `✅ (${i + 1}/${filteredContacts.length}) Sent media (${filePath
             .split("/")
             .pop()}) to ${contact.name ?? ""} (${contact.number})`
         );
+
         WhatsAppClient.trackMessageLog(sentMedia.id._serialized, {
           name: contact.name ?? "",
-          chat_id: contact.user_id,
+          chat_id: userId,
           message_id: sentMedia.id._serialized,
           ack: 0,
           timestamp: new Date().toISOString(),
           is_group: false,
         });
+
         sentMessages.push({
-          chatId: contact.user_id,
+          chatId: userId,
           msgId: sentMedia.id._serialized,
         });
         saveSentMessagesContacts(sentMessages);
+
+        const updatedSteps = [...(sentStepsMap[userId] || []), mediaStep];
+        sentStepsMap[userId] = updatedSteps;
+        saveCMProgress({
+          hash: inputHash,
+          sentSteps: sentStepsMap,
+        });
+
         await delayRandom(log, delay.min, delay.max);
       }
     } catch (error) {
-      log(`❌ Error sending to ${contact.name}: ${error.message}`);
+      log(`❌ Critical error sending to ${contact.name}: ${error.message}`);
+      cmStopSending();
+      logCriticalError(contact.name ?? userId, error);
+      saveCMProgress({
+        hash: inputHash,
+        sentSteps: sentStepsMap,
+        lastErrorChat: userId,
+      });
+      break;
     }
 
     if ((i + 1) % getRandomInt(10, 20) === 0) {
@@ -381,7 +448,11 @@ export async function sendMessagesToContacts({
     }
   }
 
-  if (!cmIsStopped()) log("✅ Messages sent to all contacts!");
+  if (!cmIsStopped()) {
+    log("✅ Messages sent to all contacts!");
+    clearCMProgress();
+  }
+
   cmStopSending();
 }
 
@@ -472,8 +543,8 @@ export async function sendMessagesToGroups({
     eventType === "uiDriven" ? fileName : GROUPS_FILE,
     log
   );
-  const sendToAll = selectedTags.includes("All");
 
+  const sendToAll = selectedTags.includes("All");
   const filteredGroups = sendToAll
     ? groups
     : groups.filter((group) => {
@@ -485,15 +556,36 @@ export async function sendMessagesToGroups({
         return selectedTags.some((tag) => groupTags.includes(tag));
       });
 
+  const inputHash = generateInputHash({
+    message,
+    sendAsContact,
+    attachedFiles,
+    selectedTags,
+  });
+
+  const previousProgress = loadGMProgress();
+  const resumeMode = previousProgress?.hash === inputHash;
+  const sentStepsMap: Record<string, string[]> = resumeMode
+    ? previousProgress.sentSteps
+    : {};
+
   const sentMessages = [];
   saveSentMessagesGroups(sentMessages);
 
   const { delay } = await getConfig();
+  let isStopedLogged = false;
 
-  let sentCount = 0;
   for (const [i, group] of filteredGroups.entries()) {
+    const groupId = group.group_id;
+
     if (gmIsStopped()) {
-      log("🛑 Stopped sending messages!");
+      if (!isStopedLogged) {
+        log("🛑 Manually stopped! Saving progress...");
+        saveGMProgress({
+          hash: inputHash,
+          sentSteps: sentStepsMap,
+        });
+      }
       break;
     }
 
@@ -508,7 +600,7 @@ export async function sendMessagesToGroups({
     }
 
     try {
-      if (message) {
+      if (!(sentStepsMap[groupId] || []).includes("msg") && message) {
         let sentMsg: WAWebJS.Message;
         if (sendAsContact) {
           const contacts = await Promise.all(
@@ -519,36 +611,55 @@ export async function sendMessagesToGroups({
               )
           );
           sentMsg = await client.sendMessage(
-            group.group_id,
+            groupId,
             contacts.length > 1 ? contacts : contacts[0]
           );
         } else {
-          sentMsg = await client.sendMessage(group.group_id, message);
+          sentMsg = await client.sendMessage(groupId, message);
         }
+
         log(
           `✅ (${i + 1}/${filteredGroups.length}) Sent message to ${
             group.name ?? "Unknown Group"
           }`
         );
+
         WhatsAppClient.trackMessageLog(sentMsg.id._serialized, {
           name: group.name ?? "",
-          chat_id: group.group_id,
+          chat_id: groupId,
           message_id: sentMsg.id._serialized,
           ack: 0, // Initially 0, will be updated via 'message_ack'
           timestamp: new Date().toISOString(),
           is_group: true,
         });
+
         sentMessages.push({
-          chatId: group.group_id,
+          chatId: groupId,
           msgId: sentMsg.id._serialized,
         });
         saveSentMessagesGroups(sentMessages);
+
+        const newSteps = [...(sentStepsMap[groupId] || []), "msg"];
+        sentStepsMap[groupId] = newSteps;
+        saveGMProgress({
+          hash: inputHash,
+          sentSteps: sentStepsMap,
+        });
+
         await delayRandom(log, delay.min, delay.max);
       }
 
       for (const [filePath, caption] of attachedFiles.entries()) {
+        const mediaStep = `media:${filePath}`;
+        if ((sentStepsMap[groupId] || []).includes(mediaStep)) continue;
+
         if (gmIsStopped()) {
-          log("🛑 Stopped sending messages!");
+          log("🛑 Manually stopped! Saving progress...");
+          saveGMProgress({
+            hash: inputHash,
+            sentSteps: sentStepsMap,
+          });
+          isStopedLogged = true;
           break;
         }
 
@@ -558,41 +669,63 @@ export async function sendMessagesToGroups({
         }
 
         const media = MessageMedia.fromFilePath(filePath);
-        const sentMedia = await client.sendMessage(group.group_id, media, {
+        const sentMedia = await client.sendMessage(groupId, media, {
           caption,
         });
+
         log(
           `✅ (${i + 1}/${filteredGroups.length}) Sent media (${filePath
             .split("/")
             .pop()}) to ${group.name ?? "Unknown Group"}`
         );
+
         WhatsAppClient.trackMessageLog(sentMedia.id._serialized, {
           name: group.name ?? "",
-          chat_id: group.group_id,
+          chat_id: groupId,
           message_id: sentMedia.id._serialized,
           ack: 0,
           timestamp: new Date().toISOString(),
           is_group: true,
         });
+
         sentMessages.push({
-          chatId: group.group_id,
+          chatId: groupId,
           msgId: sentMedia.id._serialized,
         });
         saveSentMessagesGroups(sentMessages);
+
+        const updatedSteps = [...(sentStepsMap[groupId] || []), mediaStep];
+        sentStepsMap[groupId] = updatedSteps;
+        saveGMProgress({
+          hash: inputHash,
+          sentSteps: sentStepsMap,
+        });
+
         await delayRandom(log, delay.min, delay.max);
       }
     } catch (error) {
-      log(`❌ Error sending to ${group.name}: ${error.message}`);
+      log(`❌ Critical error sending to ${group.name}: ${error.message}`);
+      gmStopSending();
+      logCriticalError(group.name ?? groupId, error);
+      saveGMProgress({
+        hash: inputHash,
+        sentSteps: sentStepsMap,
+        lastErrorChat: groupId,
+      });
+      break;
     }
 
-    sentCount++;
-    if (sentCount % getRandomInt(10, 20) === 0) {
+    if ((i + 1) % getRandomInt(10, 20) === 0) {
       log("⏳ Taking a break to avoid detection...");
       await delayRandom(log, 20000, 30000);
     }
   }
 
-  if (!gmIsStopped()) log("✅ Messages sent to all groups!");
+  if (!gmIsStopped()) {
+    log("✅ Messages sent to all groups!");
+    clearGMProgress();
+  }
+
   gmStopSending();
 }
 
@@ -672,4 +805,7 @@ export async function generateVcfFiles(contacts: VcfContact[]) {
     const filePath = path.join(VCF_SAVE_DIR, filename);
     fs.writeFileSync(filePath, vCardEntries.join("\n\n"), "utf-8");
   }
+}
+function logCriticalError(arg0: string, error: any) {
+  throw new Error("Function not implemented.");
 }
