@@ -13,7 +13,7 @@ import { initWebSocket } from "./backend/wsClient";
 import { createContactsTab } from "./ui/tabs/contacts";
 import { createGroupsTab } from "./ui/tabs/groups";
 import { createGroupContactsTab } from "./ui/tabs/groupContacts";
-import { createClearChatsTab } from "./ui/tabs/clearChats";
+import { createDeleteChatsTab } from "./ui/tabs/deleteChats";
 import { createMessageContactsTab } from "./ui/tabs/messageContacts";
 import { createMessageGroupsTab } from "./ui/tabs/messageGroups";
 import { createSettingsTab } from "./ui/tabs/settings";
@@ -109,7 +109,7 @@ async function startApp() {
   tabWidget.addTab(createContactsTab(), new QIcon(), "Contacts");
   tabWidget.addTab(createGroupsTab(), new QIcon(), "Groups");
   tabWidget.addTab(createGroupContactsTab(), new QIcon(), "Group Contacts");
-  tabWidget.addTab(createClearChatsTab(), new QIcon(), "Clear Chats");
+  tabWidget.addTab(createDeleteChatsTab(), new QIcon(), "Delete Chats");
   tabWidget.addTab(createMessageContactsTab(), new QIcon(), "Message Contacts");
   tabWidget.addTab(createMessageGroupsTab(), new QIcon(), "Message Groups");
   tabWidget.addTab(createVCFGeneratorTab(), new QIcon(), "VCF Generator");

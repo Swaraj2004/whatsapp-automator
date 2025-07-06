@@ -8,17 +8,17 @@ import {
   QTextEdit,
   QWidget,
 } from "@nodegui/nodegui";
-import { clearAllChats, clearChatById } from "../../backend/controllers";
+import { deleteAllChats, deleteChatById } from "../../backend/controllers";
 
-export function createClearChatsTab(): QWidget {
-  const clearChatsTab = new QWidget();
-  clearChatsTab.setObjectName("clearChatsTab");
+export function createDeleteChatsTab(): QWidget {
+  const deleteChatsTab = new QWidget();
+  deleteChatsTab.setObjectName("deleteChatsTab");
   const mainLayout = new FlexLayout();
-  clearChatsTab.setLayout(mainLayout);
+  deleteChatsTab.setLayout(mainLayout);
 
   const headerLabel = new QLabel();
   headerLabel.setObjectName("headerLabel");
-  headerLabel.setText("Clear Chats");
+  headerLabel.setText("Delete Chats");
 
   const headerFont = new QFont();
   headerFont.setPixelSize(18);
@@ -34,11 +34,11 @@ export function createClearChatsTab(): QWidget {
   chatIdInput.setObjectName("chatIdInput");
   chatIdInput.setPlaceholderText("Enter Contact/Group ID...");
 
-  const clearByIdButton = new QPushButton();
-  clearByIdButton.setText("Clear Chats By ID");
-  clearByIdButton.setObjectName("clearByIdButton");
-  clearByIdButton.setCursor(CursorShape.PointingHandCursor);
-  clearByIdButton.addEventListener("clicked", async () => {
+  const deleteByIdButton = new QPushButton();
+  deleteByIdButton.setText("Delete Chats By ID");
+  deleteByIdButton.setObjectName("deleteByIdButton");
+  deleteByIdButton.setCursor(CursorShape.PointingHandCursor);
+  deleteByIdButton.addEventListener("clicked", async () => {
     logsContainer.clear();
     const chatId = chatIdInput.text().trim();
     if (!chatId) {
@@ -46,21 +46,21 @@ export function createClearChatsTab(): QWidget {
       return;
     }
 
-    await clearChatById(chatId, logMessage);
+    await deleteChatById(chatId, logMessage);
   });
 
-  const clearAllChatsButton = new QPushButton();
-  clearAllChatsButton.setText("Clear All Chats");
-  clearAllChatsButton.setObjectName("clearAllChatsButton");
-  clearAllChatsButton.setCursor(CursorShape.PointingHandCursor);
-  clearAllChatsButton.addEventListener("clicked", async () => {
+  const deleteAllChatsButton = new QPushButton();
+  deleteAllChatsButton.setText("Delete All Chats");
+  deleteAllChatsButton.setObjectName("deleteAllChatsButton");
+  deleteAllChatsButton.setCursor(CursorShape.PointingHandCursor);
+  deleteAllChatsButton.addEventListener("clicked", async () => {
     logsContainer.clear();
-    await clearAllChats(logMessage);
+    await deleteAllChats(logMessage);
   });
 
   buttonLayout.addWidget(chatIdInput);
-  buttonLayout.addWidget(clearByIdButton);
-  buttonLayout.addWidget(clearAllChatsButton);
+  buttonLayout.addWidget(deleteByIdButton);
+  buttonLayout.addWidget(deleteAllChatsButton);
 
   const logsContainer = new QTextEdit();
   logsContainer.setPlaceholderText("Logs from function");
@@ -75,8 +75,8 @@ export function createClearChatsTab(): QWidget {
   mainLayout.addWidget(buttonContainer);
   mainLayout.addWidget(logsContainer);
 
-  clearChatsTab.setStyleSheet(`
-    #clearChatsTab {
+  deleteChatsTab.setStyleSheet(`
+    #deleteChatsTab {
       background-color: white;
       padding: 15px;
     }
@@ -117,5 +117,5 @@ export function createClearChatsTab(): QWidget {
     }
   `);
 
-  return clearChatsTab;
+  return deleteChatsTab;
 }

@@ -190,7 +190,7 @@ export async function extractMultipleGroupContacts(
   return true;
 }
 
-export async function clearChatById(chatId: string, logger = console.log) {
+export async function deleteChatById(chatId: string, logger = console.log) {
   try {
     const chat = await client.getChatById(chatId).catch(() => null);
 
@@ -199,28 +199,33 @@ export async function clearChatById(chatId: string, logger = console.log) {
       return;
     }
 
-    await chat.clearMessages();
-    logger(`✅ Cleared chat for: ${chat.name || "Unknown"} (${chatId})`);
+    await chat.delete();
+    logger(`✅ Deleted chat for: ${chat.name || "Unknown"} (${chatId})`);
   } catch (error) {
     logger(`❌ Error: ${error.message || "Unknown error"}`);
   }
 }
 
-export async function clearAllChats(logger = console.log) {
+export async function deleteAllChats(logger = console.log) {
   try {
     const chats = await client.getChats();
 
-    for (const chat of chats) {
-      await chat.clearMessages();
+    for (const [i, chat] of chats.entries()) {
+      await chat.delete();
       logger(
-        `✅ Cleared chat for: ${chat.name || "Unknown"} (${
+        `✅ Deleted chat for: ${chat.name || "Unknown"} (${
           chat.id._serialized
         })`
       );
-      await delayRandom(logger, 6000, 12000);
+      await delayRandom(logger, 3000, 7000);
+
+      if ((i + 1) % getRandomInt(10, 20) === 0) {
+        logger("⏳ Taking a break to avoid detection...");
+        await delayRandom(logger, 8000, 20000);
+      }
     }
 
-    logger("✅ Cleared all chats!");
+    logger("✅ Deleted all chats!");
   } catch (error) {
     logger(`❌ Error: ${error.message || "Unknown error"}`);
   }
