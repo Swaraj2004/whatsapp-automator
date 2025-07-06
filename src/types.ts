@@ -13,8 +13,13 @@ export type Group = {
   total_members: number;
   invite_link?: string;
   admin_only?: string;
-  admin_numbers?: string;
   tags?: string;
+};
+
+export type GroupAdmin = {
+  group_id: string;
+  group_name: string;
+  admin_number: string;
 };
 
 export type Config = {

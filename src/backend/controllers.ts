@@ -4,6 +4,7 @@ import WAWebJS, { MessageMedia } from "whatsapp-web.js";
 import {
   CONTACTS_FILE,
   GROUP_CONTACTS_FILE,
+  GROUPS_ADMINS_FILE,
   GROUPS_FILE,
   VCF_SAVE_DIR,
 } from "../consts";
@@ -21,7 +22,7 @@ import {
   gmResetStop,
   gmStopSending,
 } from "../globals/groupsMessagingGlobals";
-import { Contact, Group, VcfContact } from "../types";
+import { Contact, Group, GroupAdmin, VcfContact } from "../types";
 import WhatsAppClient from "./client";
 import {
   clearCMProgress,
@@ -40,6 +41,7 @@ import {
   saveContactsToExcel,
   saveGMProgress,
   saveGroupContactsToExcel,
+  saveGroupsAdminsToExcel,
   saveGroupsToExcel,
   saveSentMessagesContacts,
   saveSentMessagesGroups,
@@ -64,6 +66,7 @@ export async function extractContacts(): Promise<void> {
 export async function extractGroups() {
   const chats = await client.getChats();
   const groups: Group[] = [];
+  const groupAdmins: GroupAdmin[] = [];
 
   for (const chat of chats) {
     if (chat.isGroup) {
@@ -83,9 +86,22 @@ export async function extractGroups() {
       //   );
       // }
 
-      const adminNumbers = (chat as any).groupMetadata.participants
-        .filter((p) => p.isAdmin || p.isSuperAdmin)
-        .map((p) => p.id._serialized.split("@")[0]);
+      const metadata = (chat as any).groupMetadata;
+      const groupId = chat.id._serialized;
+      const groupName = chat.name;
+
+      const admins = metadata.participants.filter(
+        (p) => p.isAdmin || p.isSuperAdmin
+      );
+
+      for (const admin of admins) {
+        const adminNumber = admin.id._serialized.split("@")[0];
+        groupAdmins.push({
+          group_id: groupId,
+          group_name: groupName,
+          admin_number: adminNumber,
+        });
+      }
 
       groups.push({
         name: chat.name,
@@ -93,7 +109,6 @@ export async function extractGroups() {
         total_members: (chat as any).groupMetadata.participants.length,
         // invite_link: inviteLink,
         admin_only: (chat as any).groupMetadata.announce ? "Yes" : "No",
-        admin_numbers: adminNumbers.join(", "),
       });
 
       // await delayRandom();
@@ -106,7 +121,9 @@ export async function extractGroups() {
   }
 
   saveGroupsToExcel(groups);
+  saveGroupsAdminsToExcel(groupAdmins);
   console.log("✅ Groups saved to", GROUPS_FILE);
+  console.log("✅ Group admins saved to", GROUPS_ADMINS_FILE);
 }
 
 export async function extractGroupContacts(

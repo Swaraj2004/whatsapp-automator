@@ -28,6 +28,7 @@ export const CRITICAL_ERRORS_LOG_FILE = path.join(
 );
 export const CONFIG_FILE = path.join(BASE_DIR, "config.json");
 export const GROUPS_FILE = path.join(BASE_DIR, "groups.xlsx");
+export const GROUPS_ADMINS_FILE = path.join(BASE_DIR, "groups_admins.xlsx");
 export const CONTACTS_FILE = path.join(BASE_DIR, "contacts.xlsx");
 export const GROUP_CONTACTS_FILE = path.join(BASE_DIR, "group_contacts.xlsx");
 export const CONTACTS_MESSAGES_LOG_FOLDER = path.join(

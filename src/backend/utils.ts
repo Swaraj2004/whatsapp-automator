@@ -11,12 +11,20 @@ import {
   DAYS_AGO,
   GM_PROGRESS_LOG_FILE,
   GROUP_CONTACTS_FILE,
+  GROUPS_ADMINS_FILE,
   GROUPS_FILE,
   GROUPS_MESSAGES_LOG_FOLDER,
   SENT_MESSAGES_CONTACTS_FILE,
   SENT_MESSAGES_GROUPS_FILE,
 } from "../consts";
-import { Config, Contact, Group, MessageLog, VcfContact } from "../types";
+import {
+  Config,
+  Contact,
+  Group,
+  GroupAdmin,
+  MessageLog,
+  VcfContact,
+} from "../types";
 
 export function getConfig() {
   try {
@@ -126,6 +134,13 @@ export function saveGroupsToExcel(groups: Group[]): void {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Groups");
   XLSX.writeFile(wb, GROUPS_FILE);
+}
+
+export function saveGroupsAdminsToExcel(admins: GroupAdmin[]): void {
+  const ws = XLSX.utils.json_to_sheet(admins);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Admins");
+  XLSX.writeFile(wb, GROUPS_ADMINS_FILE);
 }
 
 export function loadGroupsFromExcel(
