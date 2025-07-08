@@ -35,7 +35,7 @@ export function createDeleteChatsTab(): QWidget {
   chatIdInput.setPlaceholderText("Enter Contact/Group ID...");
 
   const deleteByIdButton = new QPushButton();
-  deleteByIdButton.setText("Delete Chats By ID");
+  deleteByIdButton.setText("Delete Chat By ID");
   deleteByIdButton.setObjectName("deleteByIdButton");
   deleteByIdButton.setCursor(CursorShape.PointingHandCursor);
   deleteByIdButton.addEventListener("clicked", async () => {

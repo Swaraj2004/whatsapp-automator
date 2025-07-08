@@ -235,6 +235,11 @@ export async function deleteAllChats(logger = console.log) {
     const chats = await client.getChats();
 
     for (const [i, chat] of chats.entries()) {
+      if (chat.id._serialized.includes("@broadcast")) {
+        logger(`⚠️ Skipping broadcast group: ${chat.name || "Unknown"}`);
+        continue;
+      }
+
       await chat.delete();
       logger(
         `✅ Deleted chat for: ${chat.name || "Unknown"} (${
