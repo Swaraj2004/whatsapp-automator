@@ -1,0 +1,13 @@
+diff --git a/node_modules/whatsapp-web.js/index.d.ts b/node_modules/whatsapp-web.js/index.d.ts
+index 11e434d..0c0e73e 100644
+--- a/node_modules/whatsapp-web.js/index.d.ts
++++ b/node_modules/whatsapp-web.js/index.d.ts
+@@ -1274,7 +1274,7 @@ declare namespace WAWebJS {
+             messageSecret?: string;
+         };
+ 
+-        constructor(name: string, startTime: Date, options?: EventSendOptions)
++        constructor(name: string, startTime: Date, options?: EventListenerOptions)
+     }
+ 
+     /** Represents a Poll Vote on WhatsApp */
