@@ -89,6 +89,12 @@ export async function extractGroups() {
       const metadata = (chat as any).groupMetadata;
       const groupId = chat.id._serialized;
       const groupName = chat.name;
+      const participants = metadata.participants;
+      const me = client.info.wid._serialized;
+
+      const iAmAdmin = participants.some(
+        (p) => p.id._serialized === me && (p.isAdmin || p.isSuperAdmin)
+      );
 
       const admins = metadata.participants.filter(
         (p) => p.isAdmin || p.isSuperAdmin
@@ -108,7 +114,8 @@ export async function extractGroups() {
         group_id: chat.id._serialized,
         total_members: (chat as any).groupMetadata.participants.length,
         // invite_link: inviteLink,
-        admin_only: (chat as any).groupMetadata.announce ? "Yes" : "No",
+        admin_only:
+          (chat as any).groupMetadata.announce && !iAmAdmin ? "Yes" : "No",
       });
 
       // await delayRandom();
