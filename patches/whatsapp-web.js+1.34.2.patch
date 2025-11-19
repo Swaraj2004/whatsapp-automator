@@ -1,0 +1,26 @@
+diff --git a/node_modules/whatsapp-web.js/index.d.ts b/node_modules/whatsapp-web.js/index.d.ts
+index 9bb7870..3be3ce5 100644
+--- a/node_modules/whatsapp-web.js/index.d.ts
++++ b/node_modules/whatsapp-web.js/index.d.ts
+@@ -1300,7 +1300,7 @@ declare namespace WAWebJS {
+             messageSecret?: string;
+         };
+ 
+-        constructor(name: string, startTime: Date, options?: EventSendOptions)
++        constructor(name: string, startTime: Date, options?: EventListenerOptions)
+     }
+ 
+     /** Represents a Poll Vote on WhatsApp */
+diff --git a/node_modules/whatsapp-web.js/src/util/Injected/Store.js b/node_modules/whatsapp-web.js/src/util/Injected/Store.js
+index 6d1a0c8..253b186 100644
+--- a/node_modules/whatsapp-web.js/src/util/Injected/Store.js
++++ b/node_modules/whatsapp-web.js/src/util/Injected/Store.js
+@@ -103,7 +103,7 @@ exports.ExposeStore = () => {
+     window.Store.FindOrCreateChat = window.require('WAWebFindChatAction');
+     window.Store.CustomerNoteUtils = window.require('WAWebNoteAction');
+     window.Store.BusinessGatingUtils = window.require('WAWebBizGatingUtils');
+-    window.Store.PollsVotesSchema = require('WAWebPollsVotesSchema');
++    window.Store.PollsVotesSchema = window.require('WAWebPollsVotesSchema');
+     
+     window.Store.Settings = {
+         ...window.require('WAWebUserPrefsGeneral'),
